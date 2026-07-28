@@ -1,13 +1,25 @@
+import 'package:hive/hive.dart';
+
+part 'player_stats.g.dart';
+
+@HiveType(typeId: 4)
 class PlayerStats {
+  @HiveField(0)
   int level;
+  @HiveField(1)
   int exp;
 
   //Core attributes
 
+  @HiveField(2)
   int strength;
+  @HiveField(3)
   int vitality;
+  @HiveField(4)
   int agility;
+  @HiveField(5)
   int intelligence;
+  @HiveField(6)
   int sense;
 
   PlayerStats({

@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../providers/player_state_manager.dart';
 import '../widgets/level_up_dialog.dart';
 
+import 'wear_os/wear_home_screen.dart';
+
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
 
@@ -26,6 +28,12 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    // Wear OS Control
+    final size = MediaQuery.of(context).size;
+    if (size.width < 300 && size.height < 300) {
+      return const WearHomeScreen();
+    }
+
     // Listen for level up
     final playerController = context.watch<PlayerProgressAndStatsController>();
     if (playerController.hasLeveledUp) {

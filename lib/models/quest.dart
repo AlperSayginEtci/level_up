@@ -1,15 +1,45 @@
-enum QuestDifficulty { E, D, C, B, A, S }
-enum StatType { strength, vitality, agility, intelligence, sense, none }
+import 'package:hive/hive.dart';
 
+part 'quest.g.dart';
+
+@HiveType(typeId: 0)
+enum QuestDifficulty {
+  @HiveField(0) E,
+  @HiveField(1) D,
+  @HiveField(2) C,
+  @HiveField(3) B,
+  @HiveField(4) A,
+  @HiveField(5) S
+}
+
+@HiveType(typeId: 1)
+enum StatType {
+  @HiveField(0) strength,
+  @HiveField(1) vitality,
+  @HiveField(2) agility,
+  @HiveField(3) intelligence,
+  @HiveField(4) sense,
+  @HiveField(5) none
+}
+
+@HiveType(typeId: 2)
 class SubQuest {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String title;
+  @HiveField(2)
   final int rewardExp;
+  @HiveField(3)
   final StatType rewardStat;
   
+  @HiveField(4)
   final bool isProgressBased;
+  @HiveField(5)
   final int targetProgress;
+  @HiveField(6)
   int _currentProgress;
+  @HiveField(7)
   bool _isCompleted;
 
   SubQuest({
@@ -75,35 +105,53 @@ class SubQuest {
   }
 }
 
+@HiveType(typeId: 3)
 class Quest {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String title;
+  @HiveField(2)
   final String description;
+  @HiveField(3)
   final QuestDifficulty difficulty;
+  @HiveField(4)
   final StatType rewardStat;
+  @HiveField(5)
   final int rewardExp;
   
   // Progress tracking
+  @HiveField(6)
   final bool isProgressBased;
+  @HiveField(7)
   final int targetProgress;
+  @HiveField(8)
   int _currentProgress;
+  @HiveField(9)
   bool _isCompleted;
   
   // Sub-Quests (Chain Quests)
+  @HiveField(10)
   final List<SubQuest> subQuests;
   
   // Scheduling
+  @HiveField(11)
   final bool isRecurring;
+  @HiveField(12)
   final List<int> activeDays; // 1 = Monday, ..., 7 = Sunday
   
   // End-of-day limit evaluation
+  @HiveField(13)
   final bool isEndOfDayEvaluation;
+  @HiveField(14)
   final int? maxLimit;
   
   // System protection
+  @HiveField(15)
   final bool isSystemQuest;
   
   // Tracking resets
+  @HiveField(16)
   DateTime? lastCompletedDate;
 
   Quest({

@@ -25,3 +25,11 @@
 - [x] Created `ProfileScreen` to display a list of all earned and locked Hunter Ranks & Titles.
 - [ ] **Future Plan:** Enhance the `ProfileScreen` to act as an account page (adding user avatar, name editing, and account details).
 - [ ] **Future Plan:** Slightly shrink the size of the Radar Chart on the `HomeScreen` further and remove numeric values from its labels, keeping only stat abbreviations (e.g., 'STR', 'SEN') for a cleaner System UI look.
+
+## Session: July 28, 2026
+
+- [x] Replaced `SharedPreferences` with `Hive` for blazing fast local database storage.
+- [x] Integrated `flutter_wear_os_connectivity` and created `SyncService` for phone-to-watch communication.
+- [x] Designed `WearHomeScreen` and dynamic routing logic in `MainLayout` to detect watch screen size.
+- [x] Added `launch.json` to fix Web Port (8080) ensuring IndexedDB persistence across restarts.
+- [ ] **Bug/Todo:** User requested new tabs/features for the Wear OS UI, currently noting that some bugs exist in the initial UI draft that need to be resolved later.

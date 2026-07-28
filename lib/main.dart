@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/main_layout.dart';
 import 'providers/player_state_manager.dart';
+import 'services/database_service.dart';
+import 'services/sync_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseService.init();
+  await SyncService.init();
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => PlayerProgressAndStatsController(),

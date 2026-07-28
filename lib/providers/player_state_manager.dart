@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pedometer/pedometer.dart';
@@ -8,6 +6,8 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/player_stats.dart';
 import '../models/quest.dart';
 import '../models/achievement.dart';
+import '../services/database_service.dart';
+import '../services/sync_service.dart';
 
 class PlayerProgressAndStatsController extends ChangeNotifier {
   PlayerStats _currentPlayerStats;
@@ -54,26 +54,16 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     
     // Load Stats
-    final statsJsonString = prefs.getString('player_stats_data');
-    if (statsJsonString != null) {
-      final Map<String, dynamic> decodedMap = jsonDecode(statsJsonString);
-      _currentPlayerStats = PlayerStats.fromMap(decodedMap);
-    }
+    _currentPlayerStats = DatabaseService.getPlayerStats();
     
     // Load Quests
-    final questsJsonString = prefs.getString('player_quests_data');
-    if (questsJsonString != null) {
-      final List<dynamic> decodedList = jsonDecode(questsJsonString);
-      _availableQuests = decodedList.map((q) => Quest.fromMap(q)).toList();
-    }
+    _availableQuests = DatabaseService.getAllQuests();
     
     // Load Achievements
-    final achievementsJsonString = prefs.getString('player_achievements_data');
-    if (achievementsJsonString != null) {
-      final List<dynamic> decodedList = jsonDecode(achievementsJsonString);
-      _achievements = decodedList.map((a) => Achievement.fromMap(a)).toList();
-    } else {
-      _checkRankAchievements(notify: false); // İlk defa açıldığında veya eklenmediyse
+    _achievements = DatabaseService.getAllAchievements();
+    if (_achievements.isEmpty) {
+      _achievements = defaultAchievements.map((a) => a.copyWith()).toList();
+      _checkRankAchievements(notify: false); // İlk defa açıldığında
     }
     
     // Load Pedometer base steps
@@ -273,21 +263,18 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
 
   // Değerleri cihaz hafızasına kaydeden asenkron metod
   Future<void> _saveStatsToStorage() async {
-    final prefs = await SharedPreferences.getInstance();
+    await DatabaseService.savePlayerStats(_currentPlayerStats);
     
-    // Statları Map'e, oradan da JSON string'e dönüştürüp kaydediyoruz
-    final statsJsonString = jsonEncode(_currentPlayerStats.toMap());
-    await prefs.setString('player_stats_data', statsJsonString);
+    for (var q in _availableQuests) {
+      await DatabaseService.saveQuest(q);
+    }
     
-    // Görevleri listeye dönüştürüp JSON olarak kaydediyoruz
-    final questsList = _availableQuests.map((q) => q.toMap()).toList();
-    final questsJsonString = jsonEncode(questsList);
-    await prefs.setString('player_quests_data', questsJsonString);
+    for (var a in _achievements) {
+      await DatabaseService.saveAchievement(a);
+    }
     
-    // Başarıları JSON olarak kaydediyoruz
-    final achievementsList = _achievements.map((a) => a.toMap()).toList();
-    final achievementsJsonString = jsonEncode(achievementsList);
-    await prefs.setString('player_achievements_data', achievementsJsonString);
+    // Send updated quests to Wear OS
+    await SyncService.sendQuestsToWatch(_availableQuests);
   }
 
   void _checkRankAchievements({bool notify = true}) {
@@ -395,6 +382,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
 
   void deleteQuest(String questId) {
     _availableQuests.removeWhere((q) => q.id == questId);
+    DatabaseService.deleteQuest(questId);
     _saveStatsToStorage();
     notifyListeners();
   }
