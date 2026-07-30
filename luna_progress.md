@@ -23,8 +23,8 @@
 - [x] Integrated `fl_chart` to display a Solo Leveling themed Pentagon Radar Chart (Combat Power Analysis).
 - [x] Placed the Radar Chart side-by-side with base attributes on the `HomeScreen` in a responsive flex layout.
 - [x] Created `ProfileScreen` to display a list of all earned and locked Hunter Ranks & Titles.
-- [ ] **Future Plan:** Enhance the `ProfileScreen` to act as an account page (adding user avatar, name editing, and account details).
-- [ ] **Future Plan:** Slightly shrink the size of the Radar Chart on the `HomeScreen` further and remove numeric values from its labels, keeping only stat abbreviations (e.g., 'STR', 'SEN') for a cleaner System UI look.
+- [x] **Future Plan:** Enhance the `ProfileScreen` to act as an account page (adding user avatar, name editing, and account details).
+- [x] **Future Plan:** Slightly shrink the size of the Radar Chart on the `HomeScreen` further and remove numeric values from its labels, keeping only stat abbreviations (e.g., 'STR', 'SEN') for a cleaner System UI look.
 
 ## Session: July 28, 2026
 
@@ -32,4 +32,13 @@
 - [x] Integrated `flutter_wear_os_connectivity` and created `SyncService` for phone-to-watch communication.
 - [x] Designed `WearHomeScreen` and dynamic routing logic in `MainLayout` to detect watch screen size.
 - [x] Added `launch.json` to fix Web Port (8080) ensuring IndexedDB persistence across restarts.
-- [ ] **Bug/Todo:** User requested new tabs/features for the Wear OS UI, currently noting that some bugs exist in the initial UI draft that need to be resolved later.
+- [x] **Bug/Todo:** User requested new tabs/features for the Wear OS UI, currently noting that some bugs exist in the initial UI draft that need to be resolved later.
+
+## Session: July 30, 2026
+
+- [x] Fixed string interpolation bugs in `WearHomeScreen` and updated `AndroidManifest.xml` to fully support Wear OS native Tiles.
+- [x] Created `OnboardingScreen` (Local System Awakening) to allow the player to register their Hunter Name.
+- [x] Enhanced `ProfileScreen` into an account page that displays the avatar, completed quests, and allows Hunter Name editing.
+- [x] Cleaned up the Radar Chart (`stat_radar_chart.dart`) by removing numeric values and shrinking its layout in `HomeScreen`.
+- [ ] **Future Plan:** Implement Cloud Sync (e.g. Firebase) for cross-device saves (postponed from this session).
+- [ ] **Bug/Todo:** Fix the Radar Chart scaling logic. Currently, if a stat is low (e.g., 2), it might fill the whole radar because the dynamic maximum is calculated incorrectly or too low. We need a more balanced, logical scaling method.

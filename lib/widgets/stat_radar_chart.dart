@@ -40,15 +40,15 @@ class StatRadarChart extends StatelessWidget {
           getTitle: (index, angle) {
             switch (index) {
               case 0:
-                return RadarChartTitle(text: 'STR\n\${stats.strength}', angle: angle);
+                return RadarChartTitle(text: 'STR', angle: angle);
               case 1:
-                return RadarChartTitle(text: 'VIT\n\${stats.vitality}', angle: angle);
+                return RadarChartTitle(text: 'VIT', angle: angle);
               case 2:
-                return RadarChartTitle(text: 'AGI\n\${stats.agility}', angle: angle);
+                return RadarChartTitle(text: 'AGI', angle: angle);
               case 3:
-                return RadarChartTitle(text: 'INT\n\${stats.intelligence}', angle: angle);
+                return RadarChartTitle(text: 'INT', angle: angle);
               case 4:
-                return RadarChartTitle(text: 'SEN\n\${stats.sense}', angle: angle);
+                return RadarChartTitle(text: 'SEN', angle: angle);
               default:
                 return const RadarChartTitle(text: '');
             }

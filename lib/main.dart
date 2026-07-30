@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/main_layout.dart';
+import 'screens/onboarding_screen.dart';
 import 'providers/player_state_manager.dart';
 import 'services/database_service.dart';
 import 'services/sync_service.dart';
@@ -33,7 +34,14 @@ class LevelUpApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const MainLayout(),
+      home: Consumer<PlayerProgressAndStatsController>(
+        builder: (context, controller, child) {
+          if (controller.isNewPlayer) {
+            return const OnboardingScreen();
+          }
+          return const MainLayout();
+        },
+      ),
     );
   }
 }

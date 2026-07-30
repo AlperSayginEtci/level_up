@@ -105,7 +105,7 @@ class HomeScreen extends StatelessWidget {
                   Expanded(
                     flex: 1,
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 150),
+                      constraints: const BoxConstraints(maxHeight: 120),
                       child: StatRadarChart(stats: stats),
                     ),
                   ),

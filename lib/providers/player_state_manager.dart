@@ -26,6 +26,12 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
   Achievement? _recentlyUnlockedRank;
   Achievement? get recentlyUnlockedRank => _recentlyUnlockedRank;
 
+  // Player Profile
+  String _playerName = "Player";
+  String get playerName => _playerName;
+  bool _isNewPlayer = false;
+  bool get isNewPlayer => _isNewPlayer;
+
   void clearLevelUpFlag() {
     _hasLeveledUp = false;
     _recentlyUnlockedRank = null;
@@ -66,6 +72,10 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
       _checkRankAchievements(notify: false); // İlk defa açıldığında
     }
     
+    // Load Player Name
+    _playerName = prefs.getString('player_name') ?? "Player";
+    _isNewPlayer = prefs.getBool('is_new_player') ?? true;
+
     // Load Pedometer base steps
     _dailyBaseSteps = prefs.getInt('daily_base_steps') ?? -1;
 
@@ -275,6 +285,16 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     
     // Send updated quests to Wear OS
     await SyncService.sendQuestsToWatch(_availableQuests);
+
+    // Save key stats to SharedPreferences so Native Android TileService can read them
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('stat_level', _currentPlayerStats.level);
+    await prefs.setString('stat_rank', currentRank.title);
+    await prefs.setInt('stat_str', _currentPlayerStats.strength);
+    await prefs.setInt('stat_agi', _currentPlayerStats.agility);
+    await prefs.setInt('stat_int', _currentPlayerStats.intelligence);
+    await prefs.setInt('stat_sen', _currentPlayerStats.sense);
+    await prefs.setInt('stat_vit', _currentPlayerStats.vitality);
   }
 
   void _checkRankAchievements({bool notify = true}) {
@@ -384,6 +404,15 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     _availableQuests.removeWhere((q) => q.id == questId);
     DatabaseService.deleteQuest(questId);
     _saveStatsToStorage();
+    notifyListeners();
+  }
+
+  Future<void> updatePlayerProfile(String newName) async {
+    _playerName = newName;
+    _isNewPlayer = false;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('player_name', newName);
+    await prefs.setBool('is_new_player', false);
     notifyListeners();
   }
 

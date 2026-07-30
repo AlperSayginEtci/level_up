@@ -26,7 +26,7 @@ class _WearHomeScreenState extends State<WearHomeScreen> {
 
           return Center(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               children: [
                 _buildWearHeader(stats.level, controller.currentRank.title),
                 const SizedBox(height: 16),
@@ -63,7 +63,7 @@ class _WearHomeScreenState extends State<WearHomeScreen> {
     return Column(
       children: [
         Text(
-          "LVL \$level",
+          "LVL $level",
           style: const TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -104,7 +104,7 @@ class _WearHomeScreenState extends State<WearHomeScreen> {
             border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
             borderRadius: BorderRadius.circular(16),
           ),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -121,14 +121,14 @@ class _WearHomeScreenState extends State<WearHomeScreen> {
               const SizedBox(height: 4),
               Text(
                 quest.isProgressBased 
-                    ? "\${quest.currentProgress} / \${quest.targetProgress}" 
+                    ? "${quest.currentProgress} / ${quest.targetProgress}" 
                     : "Tap to Complete",
                 style: const TextStyle(color: Colors.white70, fontSize: 10),
               ),
               if (quest.isProgressBased) ...[
                 const SizedBox(height: 4),
                 LinearProgressIndicator(
-                  value: quest.currentProgress / quest.targetProgress,
+                  value: quest.targetProgress > 0 ? (quest.currentProgress / quest.targetProgress).clamp(0.0, 1.0) : 0.0,
                   backgroundColor: Colors.black45,
                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
                 ),
