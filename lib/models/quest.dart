@@ -153,6 +153,13 @@ class Quest {
   // Tracking resets
   @HiveField(16)
   DateTime? lastCompletedDate;
+  
+  // History tracking
+  @HiveField(17)
+  List<DateTime> completedDates;
+  
+  @HiveField(18, defaultValue: 0)
+  int completionCount;
 
   Quest({
     required this.id,
@@ -177,8 +184,11 @@ class Quest {
     this.maxLimit,
     
     this.lastCompletedDate,
+    List<DateTime>? completedDates,
+    this.completionCount = 0,
   }) : _currentProgress = currentProgress,
-       _isCompleted = isCompleted;
+       _isCompleted = isCompleted,
+       completedDates = completedDates ?? [];
 
   // Ana görevin tamamlanma durumu: Ya kendi barı dolduysa ya da tüm alt görevleri bittiyse.
   bool get isCompleted {
@@ -209,20 +219,32 @@ class Quest {
         // İlerlemeyi kısıtlamıyoruz (örn: 13/12 olabilir)
         _isCompleted = true;
         lastCompletedDate = DateTime.now();
+        if (!wasCompleted) {
+          completedDates.add(lastCompletedDate!);
+          completionCount++;
+        }
         return !wasCompleted; // Sadece İLK KEZ tamamlandığında true döner (Ödül için)
       }
     } else {
       if (_isCompleted) return false;
       _isCompleted = true;
       lastCompletedDate = DateTime.now();
+      completedDates.add(lastCompletedDate!);
+      completionCount++;
       return true; // Just completed
     }
     return false; // Progressed but not fully completed yet
   }
   
   void forceComplete() {
-    _isCompleted = true;
-    lastCompletedDate = DateTime.now();
+    if (!_isCompleted) {
+      _isCompleted = true;
+      lastCompletedDate = DateTime.now();
+      completedDates.add(lastCompletedDate!);
+      completionCount++;
+    } else {
+      lastCompletedDate = DateTime.now();
+    }
   }
 
   void resetDaily() {
@@ -252,6 +274,8 @@ class Quest {
       'isEndOfDayEvaluation': isEndOfDayEvaluation,
       'maxLimit': maxLimit,
       'lastCompletedDate': lastCompletedDate?.toIso8601String(),
+      'completedDates': completedDates.map((d) => d.toIso8601String()).toList(),
+      'completionCount': completionCount,
     };
   }
 
@@ -293,6 +317,10 @@ class Quest {
       lastCompletedDate: map['lastCompletedDate'] != null 
           ? DateTime.tryParse(map['lastCompletedDate']) 
           : null,
+      completedDates: map['completedDates'] != null
+          ? (map['completedDates'] as List).map((d) => DateTime.parse(d)).toList()
+          : [],
+      completionCount: map['completionCount'] ?? 0,
     );
   }
 }

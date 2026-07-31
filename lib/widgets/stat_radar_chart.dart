@@ -5,12 +5,12 @@ import '../models/player_stats.dart';
 class StatRadarChart extends StatelessWidget {
   final PlayerStats stats;
 
-  const StatRadarChart({Key? key, required this.stats}) : super(key: key);
+  const StatRadarChart({super.key, required this.stats});
 
   @override
   Widget build(BuildContext context) {
-    // Statların en yüksek değerini bularak grafiğin maksimum sınırını belirliyoruz.
-    // Minimum 10 yapıyoruz ki düşük seviyelerde grafik çok küçük görünmesin.
+    // Mantıksal ölçeklendirme (Örn. en yüksek stat 25 ise maksimum sınır 40 olur)
+    // Böylece stat 2 iken max'a çekilmiş gibi görünmez.
     final maxStat = [
       stats.strength,
       stats.vitality,
@@ -19,7 +19,8 @@ class StatRadarChart extends StatelessWidget {
       stats.sense
     ].reduce((a, b) => a > b ? a : b).toDouble();
     
-    final maxY = maxStat < 10 ? 10.0 : maxStat + 2;
+    // Her zaman 20'nin katları şeklinde bir üst limit belirliyoruz.
+    double maxY = ((maxStat ~/ 20) + 1) * 20.0;
 
     return AspectRatio(
       aspectRatio: 1.2,
@@ -58,16 +59,31 @@ class StatRadarChart extends StatelessWidget {
           tickBorderData: const BorderSide(color: Colors.white12),
           gridBorderData: const BorderSide(color: Colors.white12, width: 1),
         ),
-        swapAnimationDuration: const Duration(milliseconds: 800),
-        swapAnimationCurve: Curves.easeOutCirc,
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeOutCirc,
       ),
     );
   }
 
   List<RadarDataSet> showingDataSets(double maxY) {
     return [
+      // Görünmez maksimum sınır veri seti (Ölçeklendirmeyi sabitlemek için)
       RadarDataSet(
-        fillColor: Colors.blueAccent.withOpacity(0.4),
+        fillColor: Colors.transparent,
+        borderColor: Colors.transparent,
+        entryRadius: 0,
+        dataEntries: [
+          RadarEntry(value: maxY),
+          RadarEntry(value: maxY),
+          RadarEntry(value: maxY),
+          RadarEntry(value: maxY),
+          RadarEntry(value: maxY),
+        ],
+        borderWidth: 0,
+      ),
+      // Gerçek oyuncu verileri
+      RadarDataSet(
+        fillColor: Colors.blueAccent.withValues(alpha: 0.4),
         borderColor: Colors.blueAccent,
         entryRadius: 3,
         dataEntries: [

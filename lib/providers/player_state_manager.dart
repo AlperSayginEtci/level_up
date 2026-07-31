@@ -32,6 +32,19 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
   bool _isNewPlayer = false;
   bool get isNewPlayer => _isNewPlayer;
 
+  String? _profileImageBase64;
+  String? get profileImageBase64 => _profileImageBase64;
+
+  int _totalCompletedQuests = 0;
+  int get totalCompletedQuests => _totalCompletedQuests;
+
+  // Theme Easter Egg
+  bool _isShadowMonarchThemeUnlocked = false;
+  bool get isShadowMonarchThemeUnlocked => _isShadowMonarchThemeUnlocked;
+  
+  bool _isShadowMonarchThemeActive = false;
+  bool get isShadowMonarchThemeActive => _isShadowMonarchThemeActive;
+
   void clearLevelUpFlag() {
     _hasLeveledUp = false;
     _recentlyUnlockedRank = null;
@@ -75,6 +88,11 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     // Load Player Name
     _playerName = prefs.getString('player_name') ?? "Player";
     _isNewPlayer = prefs.getBool('is_new_player') ?? true;
+    _profileImageBase64 = prefs.getString('profile_image_base64');
+    _totalCompletedQuests = prefs.getInt('total_completed_quests') ?? 0;
+
+    _isShadowMonarchThemeUnlocked = prefs.getBool('shadow_monarch_unlocked') ?? false;
+    _isShadowMonarchThemeActive = prefs.getBool('shadow_monarch_active') ?? false;
 
     // Load Pedometer base steps
     _dailyBaseSteps = prefs.getInt('daily_base_steps') ?? -1;
@@ -128,7 +146,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
 
   Future<void> _initPedometer() async {
     if (kIsWeb) {
-      print("Adım sayar web'de çalışmaz. Test için 500 adım ekleniyor.");
+      debugPrint("Adım sayar web'de çalışmaz. Test için 500 adım ekleniyor.");
       _handleStepUpdate(500); // Test amaçlı
       return;
     }
@@ -140,7 +158,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
           _handleStepUpdate(event.steps);
         },
         onError: (error) {
-          print('Adım sayar hatası: \$error');
+          debugPrint('Adım sayar hatası: \$error');
         },
       );
     }
@@ -301,7 +319,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     bool newlyUnlocked = false;
     for (int i = 0; i < _achievements.length; i++) {
       if (!_achievements[i].isUnlocked && _currentPlayerStats.level >= _achievements[i].requiredLevel) {
-        _achievements[i] = _achievements[i].copyWith(isUnlocked: true);
+        _achievements[i] = _achievements[i].copyWith(isUnlocked: true, unlockedDate: DateTime.now());
         _recentlyUnlockedRank = _achievements[i];
         newlyUnlocked = true;
       }
@@ -320,6 +338,9 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     bool justCompleted = quest.addProgress(amount);
     
     if (justCompleted) {
+      _totalCompletedQuests++;
+      SharedPreferences.getInstance().then((prefs) => prefs.setInt('total_completed_quests', _totalCompletedQuests));
+
       // Eğer bu tık ile görev bittiyse (11->12) ödülü ver
       bool leveledUp = _currentPlayerStats.addExp(quest.rewardExp);
       if (leveledUp) {
@@ -353,6 +374,9 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
 
     // 3. Eğer tüm sub-quest'ler bittiyse ana görev de bitmiş demektir, onun büyük ödülünü de ver
     if (parentQuest.isCompleted) {
+      _totalCompletedQuests++;
+      SharedPreferences.getInstance().then((prefs) => prefs.setInt('total_completed_quests', _totalCompletedQuests));
+
       parentQuest.forceComplete(); // Sadece tarihi güncellemek için
       bool parentLeveledUp = _currentPlayerStats.addExp(parentQuest.rewardExp);
       if (parentLeveledUp) {
@@ -373,6 +397,9 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
 
     // 1. Görevi tamamlandı olarak işaretle
     completedQuest.addProgress(completedQuest.targetProgress);
+    
+    _totalCompletedQuests++;
+    SharedPreferences.getInstance().then((prefs) => prefs.setInt('total_completed_quests', _totalCompletedQuests));
 
     // 2. Add experience points to the player
     bool leveledUp = _currentPlayerStats.addExp(completedQuest.rewardExp);
@@ -414,6 +441,33 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     await prefs.setString('player_name', newName);
     await prefs.setBool('is_new_player', false);
     notifyListeners();
+  }
+
+  Future<void> updateProfileImageBase64(String base64) async {
+    _profileImageBase64 = base64;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profile_image_base64', base64);
+    notifyListeners();
+  }
+
+  Future<void> unlockShadowMonarchTheme() async {
+    if (!_isShadowMonarchThemeUnlocked) {
+      _isShadowMonarchThemeUnlocked = true;
+      _isShadowMonarchThemeActive = true; // Auto activate on unlock
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('shadow_monarch_unlocked', true);
+      await prefs.setBool('shadow_monarch_active', true);
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleShadowMonarchTheme() async {
+    if (_isShadowMonarchThemeUnlocked) {
+      _isShadowMonarchThemeActive = !_isShadowMonarchThemeActive;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('shadow_monarch_active', _isShadowMonarchThemeActive);
+      notifyListeners();
+    }
   }
 
   @override

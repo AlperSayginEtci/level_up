@@ -8,6 +8,8 @@ import '../providers/player_state_manager.dart';
 import '../widgets/level_up_dialog.dart';
 
 import 'wear_os/wear_home_screen.dart';
+import '../theme/app_theme.dart';
+import '../widgets/system_background.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -51,19 +53,51 @@ class _MainLayoutState extends State<MainLayout> {
       });
     }
 
+    final isShadowMonarch = playerController.isShadowMonarchThemeActive;
+
     return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        backgroundColor: Colors.grey[900],
-        selectedItemColor: Colors.deepPurpleAccent,
-        unselectedItemColor: Colors.grey,
+      backgroundColor: Colors.transparent,
+      body: SystemBackground(
+        isShadowMonarch: isShadowMonarch,
+        child: _pages[_currentIndex],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.85),
+          border: Border(
+            top: BorderSide(
+              color: AppTheme.getPrimaryColor(playerController.isShadowMonarchThemeActive).withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.getPrimaryColor(playerController.isShadowMonarchThemeActive).withValues(alpha: 0.15),
+              blurRadius: 15,
+              offset: const Offset(0, -3),
+            )
+          ]
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          type: BottomNavigationBarType.fixed,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          selectedItemColor: AppTheme.getPrimaryColor(playerController.isShadowMonarchThemeActive),
+          unselectedItemColor: Colors.grey[600],
+          selectedIconTheme: IconThemeData(
+            shadows: [
+              Shadow(
+                color: AppTheme.getPrimaryColor(playerController.isShadowMonarchThemeActive),
+                blurRadius: 12,
+              )
+            ]
+          ),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -83,6 +117,7 @@ class _MainLayoutState extends State<MainLayout> {
           ),
         ],
       ),
+    ),
     );
   }
 }

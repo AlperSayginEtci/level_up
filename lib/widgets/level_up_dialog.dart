@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/player_state_manager.dart';
 import '../models/player_stats.dart';
+import '../theme/app_theme.dart';
 
 class LevelUpDialog extends StatefulWidget {
   final PlayerStats stats;
@@ -45,6 +48,10 @@ class _LevelUpDialogState extends State<LevelUpDialog> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<PlayerProgressAndStatsController>();
+    final isShadowMonarch = controller.isShadowMonarchThemeActive;
+    final primary = AppTheme.getPrimaryColor(isShadowMonarch);
+
     return Center(
       child: Material(
         color: Colors.transparent,
@@ -55,41 +62,23 @@ class _LevelUpDialogState extends State<LevelUpDialog> with SingleTickerProvider
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 32.0),
               padding: const EdgeInsets.all(24.0),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.85),
-                borderRadius: BorderRadius.circular(16.0),
-                border: Border.all(
-                  color: Colors.blueAccent.withOpacity(0.8),
-                  width: 2.0,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blueAccent.withOpacity(0.5),
-                    blurRadius: 20.0,
-                    spreadRadius: 5.0,
-                  ),
-                ],
-              ),
+              decoration: AppTheme.systemCardDecoration(isShadowMonarch),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Glowing Title
                   Text(
                     'LEVEL UP!',
-                    style: TextStyle(
+                    style: AppTheme.systemTextStyle(
+                      isShadowMonarch,
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blueAccent,
                       letterSpacing: 4.0,
+                    ).copyWith(
+                      color: primary,
                       shadows: [
-                        Shadow(
-                          color: Colors.blueAccent.withOpacity(0.8),
-                          blurRadius: 10,
-                        ),
-                        Shadow(
-                          color: Colors.white,
-                          blurRadius: 20,
-                        ),
+                        Shadow(color: primary.withValues(alpha: 0.8), blurRadius: 10),
+                        const Shadow(color: Colors.white, blurRadius: 20),
                       ],
                     ),
                   ),
@@ -110,30 +99,25 @@ class _LevelUpDialogState extends State<LevelUpDialog> with SingleTickerProvider
                   // Level Number Display
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.blueAccent.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
-                    ),
+                    decoration: AppTheme.badgeDecoration(isShadowMonarch),
                     child: Column(
                       children: [
-                        const Text(
+                        Text(
                           'CURRENT LEVEL',
-                          style: TextStyle(
-                            color: Colors.blueAccent,
+                          style: AppTheme.systemTextStyle(
+                            isShadowMonarch,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 2.0,
-                          ),
+                          ).copyWith(color: primary),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           '${widget.stats.level}',
-                          style: const TextStyle(
+                          style: AppTheme.systemTextStyle(
+                            isShadowMonarch,
                             fontSize: 48,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            height: 1.0,
-                          ),
+                          ).copyWith(color: Colors.white, height: 1.0),
                         ),
                       ],
                     ),
@@ -146,17 +130,18 @@ class _LevelUpDialogState extends State<LevelUpDialog> with SingleTickerProvider
                     child: ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent.withOpacity(0.2),
-                        foregroundColor: Colors.blueAccent,
-                        side: const BorderSide(color: Colors.blueAccent),
+                        backgroundColor: primary.withValues(alpha: 0.2),
+                        foregroundColor: primary,
+                        side: BorderSide(color: primary),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'CONFIRM',
-                        style: TextStyle(
+                        style: AppTheme.systemTextStyle(
+                          isShadowMonarch,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 2.0,

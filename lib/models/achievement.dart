@@ -14,6 +14,8 @@ class Achievement {
   final int requiredLevel;
   @HiveField(4)
   final bool isUnlocked;
+  @HiveField(5)
+  final DateTime? unlockedDate;
 
   Achievement({
     required this.id,
@@ -21,6 +23,7 @@ class Achievement {
     required this.description,
     required this.requiredLevel,
     this.isUnlocked = false,
+    this.unlockedDate,
   });
 
   Achievement copyWith({
@@ -29,6 +32,7 @@ class Achievement {
     String? description,
     int? requiredLevel,
     bool? isUnlocked,
+    DateTime? unlockedDate,
   }) {
     return Achievement(
       id: id ?? this.id,
@@ -36,6 +40,7 @@ class Achievement {
       description: description ?? this.description,
       requiredLevel: requiredLevel ?? this.requiredLevel,
       isUnlocked: isUnlocked ?? this.isUnlocked,
+      unlockedDate: unlockedDate ?? this.unlockedDate,
     );
   }
 
@@ -46,6 +51,7 @@ class Achievement {
       'description': description,
       'requiredLevel': requiredLevel,
       'isUnlocked': isUnlocked,
+      'unlockedDate': unlockedDate?.toIso8601String(),
     };
   }
 
@@ -56,13 +62,14 @@ class Achievement {
       description: map['description'] ?? '',
       requiredLevel: map['requiredLevel'] ?? 1,
       isUnlocked: map['isUnlocked'] ?? false,
+      unlockedDate: map['unlockedDate'] != null ? DateTime.tryParse(map['unlockedDate']) : null,
     );
   }
 }
 
 // Varsayılan Başarılar (Ranks)
 final List<Achievement> defaultAchievements = [
-  Achievement(id: 'rank_e', title: 'E-Rank', description: 'Uyanışını yeni tamamladın.', requiredLevel: 1, isUnlocked: true),
+  Achievement(id: 'rank_e', title: 'E-Rank', description: 'Uyanışını yeni tamamladın.', requiredLevel: 1, isUnlocked: true, unlockedDate: DateTime.now()),
   Achievement(id: 'rank_d', title: 'D-Rank', description: 'Daha güçlü canavarlarla yüzleşmeye hazırsın.', requiredLevel: 10),
   Achievement(id: 'rank_c', title: 'C-Rank', description: 'Ortalama bir Avcı oldun.', requiredLevel: 20),
   Achievement(id: 'rank_b', title: 'B-Rank', description: 'Loncalar tarafından saygı duyulan biri.', requiredLevel: 30),

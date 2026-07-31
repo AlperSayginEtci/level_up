@@ -87,6 +87,8 @@ class QuestAdapter extends TypeAdapter<Quest> {
       isEndOfDayEvaluation: fields[13] as bool,
       maxLimit: fields[14] as int?,
       lastCompletedDate: fields[16] as DateTime?,
+      completedDates: (fields[17] as List?)?.cast<DateTime>(),
+      completionCount: fields[18] == null ? 0 : fields[18] as int,
     )
       .._currentProgress = fields[8] as int
       .._isCompleted = fields[9] as bool;
@@ -95,7 +97,7 @@ class QuestAdapter extends TypeAdapter<Quest> {
   @override
   void write(BinaryWriter writer, Quest obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -129,7 +131,11 @@ class QuestAdapter extends TypeAdapter<Quest> {
       ..writeByte(15)
       ..write(obj.isSystemQuest)
       ..writeByte(16)
-      ..write(obj.lastCompletedDate);
+      ..write(obj.lastCompletedDate)
+      ..writeByte(17)
+      ..write(obj.completedDates)
+      ..writeByte(18)
+      ..write(obj.completionCount);
   }
 
   @override

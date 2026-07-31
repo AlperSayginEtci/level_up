@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/player_state_manager.dart';
 import '../models/quest.dart';
+import '../theme/app_theme.dart';
 
 class PlannerScreen extends StatefulWidget {
   const PlannerScreen({super.key});
@@ -27,31 +28,41 @@ class _PlannerScreenState extends State<PlannerScreen> {
   Widget build(BuildContext context) {
     final playerController = context.watch<PlayerProgressAndStatsController>();
     
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final selectedDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+    final isPast = selectedDay.isBefore(today);
+
     // Sadece Sistem Görevi olmayan ve her gün tekrarlanmayan (Spesifik günleri olan) görevleri filtrele
     final quests = playerController.availableQuests.where((q) {
       if (q.isSystemQuest) return false;
       
-      // Eğer her gün olan bir görevse (activeDays boşsa veya 7 gün seçiliyse) takvimde göstermeyelim, zaten anasayfada var.
-      if (q.isRecurring && (q.activeDays.isEmpty || q.activeDays.length == 7)) return false;
-      
-      // Seçili tarihin haftanın gününe denk gelen görevleri listele
-      if (q.isRecurring && q.activeDays.isNotEmpty) {
-        return q.activeDays.contains(_selectedDate.weekday);
+      if (isPast) {
+        // Geçmişteki bir gün için, o gün tamamlanmışsa göster
+        return q.completedDates.any((d) => d.year == selectedDay.year && d.month == selectedDay.month && d.day == selectedDay.day);
+      } else {
+        // Bugün veya gelecek için normal kurallar geçerli
+        if (q.isRecurring && (q.activeDays.isEmpty || q.activeDays.length == 7)) return false;
+        
+        if (q.isRecurring && q.activeDays.isNotEmpty) {
+          return q.activeDays.contains(_selectedDate.weekday);
+        }
+        return false; 
       }
-      
-      return false; 
     }).toList();
 
+    final isShadowMonarch = playerController.isShadowMonarchThemeActive;
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Quest Planner'),
+        title: Text('Quest Planner', style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 20, fontWeight: FontWeight.bold)),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
       body: Column(
         children: [
           // Haftalık / İleriye dönük yatay takvim
-          _buildWeeklyCalendar(),
+          _buildWeeklyCalendar(isShadowMonarch),
           const Divider(),
           
           Expanded(
@@ -68,7 +79,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     itemCount: quests.length,
                     itemBuilder: (context, index) {
                       final quest = quests[index];
-                      return _buildPlannerQuestCard(quest);
+                      return _buildPlannerQuestCard(quest, isPast, isShadowMonarch);
                     },
                   ),
           ),
@@ -77,7 +88,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
     );
   }
 
-  Widget _buildWeeklyCalendar() {
+  Widget _buildWeeklyCalendar(bool isShadowMonarch) {
     return SizedBox(
       height: 90,
       child: ListView.builder(
@@ -99,11 +110,14 @@ class _PlannerScreenState extends State<PlannerScreen> {
             child: Container(
               width: 60,
               margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.deepPurpleAccent : Colors.grey[850],
-                borderRadius: BorderRadius.circular(12),
-                border: isSelected ? Border.all(color: Colors.purpleAccent, width: 2) : null,
-              ),
+              decoration: isSelected 
+                  ? AppTheme.systemCardDecoration(isShadowMonarch).copyWith(
+                      border: Border.all(color: AppTheme.getPrimaryColor(isShadowMonarch), width: 2),
+                    )
+                  : AppTheme.systemCardDecoration(isShadowMonarch).copyWith(
+                      color: Colors.transparent,
+                      border: Border.all(color: Colors.transparent),
+                    ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -134,18 +148,17 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
 
 
-  Widget _buildPlannerQuestCard(Quest quest) {
+  Widget _buildPlannerQuestCard(Quest quest, bool isPast, bool isShadowMonarch) {
     if (quest.subQuests.isNotEmpty) {
-      return Card(
-        color: Colors.grey[850],
+      return Container(
+        decoration: AppTheme.systemCardDecoration(isShadowMonarch),
         margin: const EdgeInsets.only(bottom: 16.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: ExpansionTile(
           title: Text(
             quest.title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            style: AppTheme.systemTextStyle(isShadowMonarch, fontWeight: FontWeight.bold, fontSize: 18),
           ),
-          subtitle: Text(quest.description),
+          subtitle: Text(quest.description, style: TextStyle(color: Colors.grey[400])),
           children: quest.subQuests.map((sq) {
             return ListTile(
               leading: Icon(
@@ -160,25 +173,23 @@ class _PlannerScreenState extends State<PlannerScreen> {
       );
     }
     
-    return Card(
-      color: Colors.grey[850],
+    return Container(
+      decoration: AppTheme.systemCardDecoration(isShadowMonarch),
       margin: const EdgeInsets.only(bottom: 16.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         title: Text(
           quest.title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: AppTheme.systemTextStyle(isShadowMonarch, fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        subtitle: Text(quest.description),
+        subtitle: Text(quest.description, style: TextStyle(color: Colors.grey[400])),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.deepPurpleAccent.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(8),
-          ),
+          decoration: isPast || quest.isCompleted
+              ? AppTheme.badgeDecoration(isShadowMonarch).copyWith(color: Colors.green.withValues(alpha: 0.3))
+              : AppTheme.badgeDecoration(isShadowMonarch),
           child: Text(
-            'Rank ${quest.difficulty.name}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            isPast ? 'Completed' : 'Rank ${quest.difficulty.name}',
+            style: TextStyle(fontWeight: FontWeight.bold, color: isPast || quest.isCompleted ? Colors.green : AppTheme.getPrimaryColor(isShadowMonarch)),
           ),
         ),
       ),

@@ -4,7 +4,7 @@ import '../../providers/player_state_manager.dart';
 import '../../models/quest.dart';
 
 class WearHomeScreen extends StatefulWidget {
-  const WearHomeScreen({Key? key}) : super(key: key);
+  const WearHomeScreen({super.key});
 
   @override
   State<WearHomeScreen> createState() => _WearHomeScreenState();
@@ -50,7 +50,7 @@ class _WearHomeScreenState extends State<WearHomeScreen> {
                     ),
                   )
                 else
-                  ...quests.map((q) => _buildWearQuestTile(q, controller)).toList(),
+                  ...quests.map((q) => _buildWearQuestTile(q, controller)),
               ],
             ),
           );
@@ -100,8 +100,8 @@ class _WearHomeScreenState extends State<WearHomeScreen> {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
-            border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
+            color: Colors.blue.withValues(alpha: 0.1),
+            border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),

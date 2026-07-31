@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/quest.dart';
 import '../providers/player_state_manager.dart';
+import '../theme/app_theme.dart';
+import '../widgets/system_background.dart';
 
 class CreateQuestScreen extends StatefulWidget {
   final Quest? existingQuest;
@@ -164,14 +166,15 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
     );
   }
 
-  InputDecoration _buildInputDecoration(String label) {
+  InputDecoration _buildInputDecoration(String label, bool isShadowMonarch) {
+    final primary = AppTheme.getPrimaryColor(isShadowMonarch);
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
-      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.blueAccent.withOpacity(0.5))),
-      focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blueAccent, width: 2)),
+      labelStyle: TextStyle(color: primary, fontWeight: FontWeight.bold),
+      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: primary.withValues(alpha: 0.5))),
+      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: primary, width: 2)),
       filled: true,
-      fillColor: Colors.black.withOpacity(0.3),
+      fillColor: Colors.black.withValues(alpha: 0.3),
     );
   }
 
@@ -179,36 +182,30 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
   Widget build(BuildContext context) {
     // Basic protection against editing full mechanics of System Quests
     final isSystem = widget.existingQuest?.isSystemQuest ?? false;
+    final controller = context.watch<PlayerProgressAndStatsController>();
+    final isShadowMonarch = controller.isShadowMonarchThemeActive;
+    final primary = AppTheme.getPrimaryColor(isShadowMonarch);
 
-    return Scaffold(
-      backgroundColor: Colors.black, // Dark background
-      appBar: AppBar(
-        title: Text(
-          widget.existingQuest == null ? 'SYSTEM: NEW QUEST' : 'SYSTEM: EDIT QUEST',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 2.0,
-            color: Colors.blueAccent,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.blueAccent),
-        elevation: 0,
-      ),
-      body: Container(
-        margin: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A), // Very dark grey
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blueAccent.withOpacity(0.5), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.blueAccent.withOpacity(0.1),
-              blurRadius: 10,
-              spreadRadius: 2,
+    return SystemBackground(
+      isShadowMonarch: isShadowMonarch,
+      child: Scaffold(
+        backgroundColor: Colors.transparent, // Dark background
+        appBar: AppBar(
+          title: Text(
+            widget.existingQuest == null ? 'SYSTEM: NEW QUEST' : 'SYSTEM: EDIT QUEST',
+            style: AppTheme.systemTextStyle(
+              isShadowMonarch,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2.0,
             ),
-          ],
+          ),
+          backgroundColor: Colors.transparent,
+          iconTheme: IconThemeData(color: primary),
+          elevation: 0,
         ),
+        body: Container(
+          margin: const EdgeInsets.all(16.0),
+          decoration: AppTheme.systemCardDecoration(isShadowMonarch),
         child: Form(
           key: _formKey,
           child: ListView(
@@ -223,7 +220,7 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                 controller: _titleController,
                 enabled: !isSystem,
                 style: const TextStyle(color: Colors.white, fontSize: 18),
-                decoration: _buildInputDecoration('Quest Title'),
+                decoration: _buildInputDecoration('Quest Title', isShadowMonarch),
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
@@ -231,7 +228,7 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                 controller: _descController,
                 enabled: !isSystem,
                 style: const TextStyle(color: Colors.white70),
-                decoration: _buildInputDecoration('Description'),
+                decoration: _buildInputDecoration('Description', isShadowMonarch),
                 maxLines: 3,
               ),
               const SizedBox(height: 24),
@@ -250,7 +247,7 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                       enabled: !isSystem,
                       keyboardType: TextInputType.number,
                       style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold),
-                      decoration: _buildInputDecoration('Reward EXP'),
+                      decoration: _buildInputDecoration('Reward EXP', isShadowMonarch),
                       validator: (v) => v!.isEmpty ? 'Required' : null,
                     ),
                   ),
@@ -258,9 +255,9 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                   Expanded(
                     child: DropdownButtonFormField<QuestDifficulty>(
                       initialValue: _difficulty,
-                      decoration: _buildInputDecoration('Rank'),
-                      dropdownColor: Colors.grey[900],
-                      style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold),
+                      decoration: _buildInputDecoration('Rank', isShadowMonarch),
+                      dropdownColor: AppTheme.getDarkColor(isShadowMonarch),
+                      style: TextStyle(color: primary, fontWeight: FontWeight.bold),
                       items: isSystem ? null : QuestDifficulty.values.map((d) {
                         return DropdownMenuItem(value: d, child: Text('Rank ${d.name}'));
                       }).toList(),
@@ -273,9 +270,9 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
               
               DropdownButtonFormField<StatType>(
                 initialValue: _rewardStat,
-                decoration: _buildInputDecoration('Bonus Stat'),
-                dropdownColor: Colors.grey[900],
-                style: const TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold),
+                decoration: _buildInputDecoration('Bonus Stat', isShadowMonarch),
+                dropdownColor: AppTheme.getDarkColor(isShadowMonarch),
+                style: TextStyle(color: primary, fontWeight: FontWeight.bold),
                 items: isSystem ? null : StatType.values.map((s) {
                   return DropdownMenuItem(value: s, child: Text('+1 ${s.name.toUpperCase()}'));
                 }).toList(),
@@ -293,7 +290,8 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                 SwitchListTile(
                   title: const Text('Recurring Quest', style: TextStyle(color: Colors.white)),
                   subtitle: const Text('Does this repeat on certain days?', style: TextStyle(color: Colors.grey)),
-                  activeColor: Colors.blueAccent,
+                  activeTrackColor: primary.withValues(alpha: 0.5),
+                  activeColor: primary,
                   contentPadding: EdgeInsets.zero,
                   value: _isRecurring,
                   onChanged: (val) => setState(() => _isRecurring = val),
@@ -307,9 +305,9 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                       return ChoiceChip(
                         label: Text(daysStr[day-1], style: TextStyle(color: isSelected ? Colors.white : Colors.grey)),
                         selected: isSelected,
-                        selectedColor: Colors.blueAccent.withOpacity(0.4),
+                        selectedColor: primary.withValues(alpha: 0.4),
                         backgroundColor: Colors.transparent,
-                        side: BorderSide(color: isSelected ? Colors.blueAccent : Colors.grey[800]!),
+                        side: BorderSide(color: isSelected ? primary : Colors.grey[800]!),
                         onSelected: (selected) {
                           setState(() {
                             if (selected) {
@@ -331,7 +329,8 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                 SwitchListTile(
                   title: const Text('Chain Quest (Sub-Quests)', style: TextStyle(color: Colors.white)),
                   subtitle: const Text('Multiple steps to complete', style: TextStyle(color: Colors.grey)),
-                  activeColor: Colors.blueAccent,
+                  activeTrackColor: primary.withValues(alpha: 0.5),
+                  activeColor: primary,
                   contentPadding: EdgeInsets.zero,
                   value: _isChainQuest,
                   onChanged: (val) {
@@ -346,7 +345,8 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                   SwitchListTile(
                     title: const Text('Progress Based', style: TextStyle(color: Colors.white)),
                     subtitle: const Text('Require X amount to complete (e.g. 10 pages)', style: TextStyle(color: Colors.grey)),
-                    activeColor: Colors.blueAccent,
+                    activeTrackColor: primary.withValues(alpha: 0.5),
+                    activeColor: primary,
                     contentPadding: EdgeInsets.zero,
                     value: _isProgressBased,
                     onChanged: (val) => setState(() => _isProgressBased = val),
@@ -360,7 +360,7 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                     controller: _targetController,
                     keyboardType: TextInputType.number,
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    decoration: _buildInputDecoration('Target Amount (e.g. 12)'),
+                    decoration: _buildInputDecoration('Target Amount (e.g. 12)', isShadowMonarch),
                     validator: (v) => v!.isEmpty ? 'Required' : null,
                   ),
                 ),
@@ -386,13 +386,13 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                       },
                     ),
                   ),
-                )).toList(),
+                )),
                 OutlinedButton.icon(
                   onPressed: _addSubQuestDialog,
-                  icon: const Icon(Icons.add, color: Colors.blueAccent),
-                  label: const Text('Add Sub-Quest', style: TextStyle(color: Colors.blueAccent)),
+                  icon: Icon(Icons.add, color: primary),
+                  label: Text('Add Sub-Quest', style: TextStyle(color: primary)),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.blueAccent),
+                    side: BorderSide(color: primary),
                   ),
                 )
               ],
@@ -404,19 +404,20 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                 child: ElevatedButton(
                   onPressed: _saveQuest,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent.withOpacity(0.2),
-                    foregroundColor: Colors.blueAccent,
-                    side: const BorderSide(color: Colors.blueAccent, width: 2),
+                    backgroundColor: primary.withValues(alpha: 0.2),
+                    foregroundColor: primary,
+                    side: BorderSide(color: primary, width: 2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('ACCEPT QUEST', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
+                  child: Text('ACCEPT QUEST', style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
                 ),
               ),
             ],
           ),
         ),
+      ),
       ),
     );
   }

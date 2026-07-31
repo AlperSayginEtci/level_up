@@ -1,6 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../providers/player_state_manager.dart';
+import '../theme/app_theme.dart';
+import 'quest_history_screen.dart';
+import 'achievements_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -8,13 +13,30 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final playerController = context.watch<PlayerProgressAndStatsController>();
-    final achievements = playerController.achievements;
+
+    final isShadowMonarch = playerController.isShadowMonarchThemeActive;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('System Account'),
+        title: Text(
+          'System Account',
+          style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 20, fontWeight: FontWeight.bold),
+        ),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        actions: [
+          if (playerController.isShadowMonarchThemeUnlocked)
+            IconButton(
+              icon: Icon(
+                Icons.dark_mode,
+                color: AppTheme.getPrimaryColor(isShadowMonarch),
+              ),
+              onPressed: () {
+                playerController.toggleShadowMonarchTheme();
+              },
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -23,56 +45,52 @@ class ProfileScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildProfileHeader(context, playerController),
-              // Achievements / Ranks Section
-              Text(
-                'Hunter Ranks & Titles',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              // Quest Records Section
+              Container(
+                decoration: AppTheme.systemCardDecoration(isShadowMonarch),
+                margin: const EdgeInsets.only(bottom: 16),
+                child: ListTile(
+                  leading: Icon(Icons.history, color: AppTheme.getPrimaryColor(isShadowMonarch), size: 32),
+                  title: Text(
+                    'View Quest History',
+                    style: AppTheme.systemTextStyle(isShadowMonarch, fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    '${playerController.availableQuests.where((q) => q.completionCount > 0).length} tracked quests',
+                    style: TextStyle(color: Colors.grey[400]),
+                  ),
+                  trailing: Icon(Icons.arrow_forward_ios, color: AppTheme.getPrimaryColor(isShadowMonarch).withValues(alpha: 0.5), size: 16),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const QuestHistoryScreen()),
+                    );
+                  },
+                ),
               ),
-              const SizedBox(height: 16),
-              
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: achievements.length,
-                itemBuilder: (context, index) {
-                  final achievement = achievements[index];
-                  final isUnlocked = achievement.isUnlocked;
-                  
-                  return Card(
-                    color: isUnlocked ? Colors.grey[850] : Colors.black45,
-                    margin: const EdgeInsets.only(bottom: 12.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: isUnlocked ? Colors.amber.withValues(alpha: 0.5) : Colors.transparent,
-                        width: 1,
-                      ),
-                    ),
-                    child: ListTile(
-                      leading: Icon(
-                        isUnlocked ? Icons.workspace_premium : Icons.lock,
-                        color: isUnlocked ? Colors.amber : Colors.grey[700],
-                        size: 32,
-                      ),
-                      title: Text(
-                        achievement.title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isUnlocked ? Colors.white : Colors.grey[600],
-                          fontSize: 18,
-                        ),
-                      ),
-                      subtitle: Text(
-                        isUnlocked ? achievement.description : 'Unlocks at Level ${achievement.requiredLevel}',
-                        style: TextStyle(
-                          color: isUnlocked ? Colors.grey[400] : Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                  );
-                },
+
+              // Achievements / Ranks Section
+              Container(
+                decoration: AppTheme.systemCardDecoration(isShadowMonarch),
+                margin: const EdgeInsets.only(bottom: 32),
+                child: ListTile(
+                  leading: Icon(Icons.stars, color: Colors.yellowAccent.withValues(alpha: 0.8), size: 32),
+                  title: Text(
+                    'View Hunter Ranks',
+                    style: AppTheme.systemTextStyle(isShadowMonarch, fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    '${playerController.achievements.where((a) => a.isUnlocked).length} / ${playerController.achievements.length} Unlocked',
+                    style: TextStyle(color: Colors.grey[400]),
+                  ),
+                  trailing: Icon(Icons.arrow_forward_ios, color: AppTheme.getPrimaryColor(isShadowMonarch).withValues(alpha: 0.5), size: 16),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AchievementsScreen()),
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -82,39 +100,49 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader(BuildContext context, PlayerProgressAndStatsController controller) {
+    final isShadowMonarch = controller.isShadowMonarchThemeActive;
+    
     return Column(
       children: [
-        const CircleAvatar(
-          radius: 50,
-          backgroundColor: Colors.black45,
-          child: Icon(Icons.person, size: 60, color: Colors.blueAccent),
-        ),
+        _EasterEggAvatar(controller: controller),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               controller.playerName,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [const Shadow(color: Colors.blueAccent, blurRadius: 10)],
-                  ),
+              style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 28, fontWeight: FontWeight.bold),
             ),
             IconButton(
-              icon: const Icon(Icons.edit, color: Colors.grey, size: 20),
+              icon: Icon(Icons.edit, color: AppTheme.getPrimaryColor(isShadowMonarch).withValues(alpha: 0.6), size: 20),
               onPressed: () {
                 _showEditNameDialog(context, controller);
               },
             ),
           ],
         ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: AppTheme.badgeDecoration(isShadowMonarch),
+          child: Text(
+            controller.currentRank.title,
+            style: TextStyle(
+              color: AppTheme.getPrimaryColor(isShadowMonarch),
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              letterSpacing: 1.2,
+              shadows: [Shadow(color: AppTheme.getPrimaryColor(isShadowMonarch), blurRadius: 4)],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         Text(
-          'Total Quests Completed: ${controller.availableQuests.where((q) => q.isCompleted).length}',
-          style: const TextStyle(color: Colors.grey),
+          'Total Quests Completed: ${controller.totalCompletedQuests}',
+          style: TextStyle(color: AppTheme.getPrimaryColor(isShadowMonarch).withValues(alpha: 0.8)),
         ),
         const SizedBox(height: 32),
-        const Divider(color: Colors.white24),
+        Divider(color: AppTheme.getPrimaryColor(isShadowMonarch).withValues(alpha: 0.3)),
         const SizedBox(height: 16),
       ],
     );
@@ -160,6 +188,116 @@ class ProfileScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _EasterEggAvatar extends StatefulWidget {
+  final PlayerProgressAndStatsController controller;
+  const _EasterEggAvatar({required this.controller});
+
+  @override
+  State<_EasterEggAvatar> createState() => _EasterEggAvatarState();
+}
+
+class _EasterEggAvatarState extends State<_EasterEggAvatar> {
+  int _tapCount = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final isShadowMonarch = widget.controller.isShadowMonarchThemeActive;
+    final primary = AppTheme.getPrimaryColor(isShadowMonarch);
+
+    return GestureDetector(
+      onTap: () async {
+        _tapCount++;
+        if (_tapCount == 7) {
+          if (!widget.controller.isShadowMonarchThemeUnlocked) {
+            await widget.controller.unlockShadowMonarchTheme();
+            if (context.mounted) {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: AppTheme.getDarkColor(true),
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(color: AppTheme.shadowPurple, width: 2),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: Text(
+                    'SYSTEM NOTIFICATION',
+                    style: AppTheme.systemTextStyle(true, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  content: Text(
+                    'The Architect has been defeated.\n\nShadow Monarch Domain Unlocked.',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text('ARISE', style: AppTheme.systemTextStyle(true, fontWeight: FontWeight.bold)),
+                    )
+                  ],
+                )
+              );
+            }
+          } else {
+             if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'You have already awakened, Monarch.',
+                    style: AppTheme.systemTextStyle(isShadowMonarch),
+                  ),
+                  backgroundColor: AppTheme.getDarkColor(isShadowMonarch),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          }
+          _tapCount = 0;
+        }
+      },
+      onLongPress: () async {
+        final picker = ImagePicker();
+        final pickedFile = await picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 512,
+          maxHeight: 512,
+          imageQuality: 70,
+        );
+        if (pickedFile != null) {
+          final bytes = await pickedFile.readAsBytes();
+          final base64String = base64Encode(bytes);
+          widget.controller.updateProfileImageBase64(base64String);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: primary.withValues(alpha: 0.8),
+            width: 2.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: primary.withValues(alpha: 0.5),
+              blurRadius: 20,
+              spreadRadius: 2,
+            )
+          ],
+        ),
+        child: CircleAvatar(
+          radius: 55,
+          backgroundColor: Colors.black45,
+          backgroundImage: widget.controller.profileImageBase64 != null
+              ? MemoryImage(base64Decode(widget.controller.profileImageBase64!))
+              : null,
+          child: widget.controller.profileImageBase64 == null
+              ? Icon(Icons.person, size: 60, color: primary)
+              : null,
+        ),
+      ),
     );
   }
 }

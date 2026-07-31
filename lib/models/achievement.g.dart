@@ -22,13 +22,14 @@ class AchievementAdapter extends TypeAdapter<Achievement> {
       description: fields[2] as String,
       requiredLevel: fields[3] as int,
       isUnlocked: fields[4] as bool,
+      unlockedDate: fields[5] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Achievement obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -38,7 +39,9 @@ class AchievementAdapter extends TypeAdapter<Achievement> {
       ..writeByte(3)
       ..write(obj.requiredLevel)
       ..writeByte(4)
-      ..write(obj.isUnlocked);
+      ..write(obj.isUnlocked)
+      ..writeByte(5)
+      ..write(obj.unlockedDate);
   }
 
   @override

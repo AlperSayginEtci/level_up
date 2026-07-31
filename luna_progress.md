@@ -42,3 +42,15 @@
 - [x] Cleaned up the Radar Chart (`stat_radar_chart.dart`) by removing numeric values and shrinking its layout in `HomeScreen`.
 - [ ] **Future Plan:** Implement Cloud Sync (e.g. Firebase) for cross-device saves (postponed from this session).
 - [ ] **Bug/Todo:** Fix the Radar Chart scaling logic. Currently, if a stat is low (e.g., 2), it might fill the whole radar because the dynamic maximum is calculated incorrectly or too low. We need a more balanced, logical scaling method.
+
+## Session: July 31, 2026
+
+- [x] Designed and integrated a dynamic, animated circuit/star-map background (`SystemBackground`) across all screens in the app to establish the Solo Leveling aesthetic.
+- [x] Refactored `AppTheme` to create a robust, global design system.
+- [x] Implemented a **Hidden Easter Egg** in the Profile Screen: tapping the highest rank unlocks the "Shadow Monarch" (Mor/Purple) system theme. The user can toggle this theme seamlessly across the entire app.
+- [x] Fixed all active IDE warnings, deprecations, and compiler errors across the codebase to ensure optimal stability.
+- [ ] **Future Plan:** Implement Cloud Sync (e.g., Firebase) for cross-device saves (carried over as a primary goal).
+- [ ] **Future Plan:** Tweak the `SystemBackground`. Specifically:
+  - Reduce the intensity/brightness of the central glowing light.
+  - Reorganize the chaotic circuit lines into a more structured, geometric, or fractal-like layout (e.g., squares/rectangles that form a frame around the screen).
+  - **Optimization Check:** Ensure that calculating the dynamic circuit lines frame-by-frame doesn't drop performance/FPS. Consider caching paths or optimizing the `CustomPainter` logic.

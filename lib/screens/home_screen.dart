@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/player_state_manager.dart';
 import '../models/quest.dart';
 import '../widgets/stat_radar_chart.dart';
+import '../theme/app_theme.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -14,10 +16,12 @@ class HomeScreen extends StatelessWidget {
     final todayQuests = playerController.availableQuests; // We will filter this later for "today"
     
     final double expProgress = stats.exp / stats.requiredExp;
+    final isShadowMonarch = playerController.isShadowMonarchThemeActive;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('LevelUp - Player Status'),
+        title: Text('LevelUp - Player Status', style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 20, fontWeight: FontWeight.bold)),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
@@ -31,10 +35,15 @@ class HomeScreen extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 40,
                     backgroundColor: Colors.blueGrey,
-                    child: Icon(Icons.person, size: 40, color: Colors.white),
+                    backgroundImage: playerController.profileImageBase64 != null
+                        ? MemoryImage(base64Decode(playerController.profileImageBase64!))
+                        : null,
+                    child: playerController.profileImageBase64 == null
+                        ? const Icon(Icons.person, size: 40, color: Colors.white)
+                        : null,
                   ),
                   const SizedBox(width: 20),
                   Expanded(
@@ -43,19 +52,12 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Level ${stats.level}',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.deepPurpleAccent,
-                              ),
+                          style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 32, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           playerController.currentRank.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.amber,
-                                letterSpacing: 1.2,
-                              ),
+                          style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         ClipRRect(
@@ -63,8 +65,8 @@ class HomeScreen extends StatelessWidget {
                           child: LinearProgressIndicator(
                             value: expProgress,
                             minHeight: 12,
-                            backgroundColor: Colors.grey[850],
-                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.deepPurpleAccent),
+                            backgroundColor: Colors.black45,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.getPrimaryColor(isShadowMonarch)),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -82,7 +84,7 @@ class HomeScreen extends StatelessWidget {
               // --- Base Attributes/Stats Section ---
               Text(
                 'Base Attributes',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               
@@ -93,11 +95,11 @@ class HomeScreen extends StatelessWidget {
                     flex: 2,
                     child: Column(
                       children: [
-                        _buildStatDisplayRow('Strength (STR)', stats.strength),
-                        _buildStatDisplayRow('Vitality (VIT)', stats.vitality),
-                        _buildStatDisplayRow('Agility (AGI)', stats.agility),
-                        _buildStatDisplayRow('Intelligence (INT)', stats.intelligence),
-                        _buildStatDisplayRow('Sense (SEN)', stats.sense),
+                        _buildStatDisplayRow('Strength (STR)', stats.strength, isShadowMonarch),
+                        _buildStatDisplayRow('Vitality (VIT)', stats.vitality, isShadowMonarch),
+                        _buildStatDisplayRow('Agility (AGI)', stats.agility, isShadowMonarch),
+                        _buildStatDisplayRow('Intelligence (INT)', stats.intelligence, isShadowMonarch),
+                        _buildStatDisplayRow('Sense (SEN)', stats.sense, isShadowMonarch),
                       ],
                     ),
                   ),
@@ -105,7 +107,7 @@ class HomeScreen extends StatelessWidget {
                   Expanded(
                     flex: 1,
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 120),
+                      constraints: const BoxConstraints(maxHeight: 240),
                       child: StatRadarChart(stats: stats),
                     ),
                   ),
@@ -119,7 +121,7 @@ class HomeScreen extends StatelessWidget {
               // --- Daily Quests Section ---
               Text(
                 'Daily Quests',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               
@@ -137,7 +139,7 @@ class HomeScreen extends StatelessWidget {
                   itemCount: todayQuests.length,
                   itemBuilder: (context, index) {
                     final quest = todayQuests[index];
-                    return _buildQuestCard(context, quest, playerController);
+                    return _buildQuestCard(context, quest, playerController, isShadowMonarch);
                   },
                 ),
             ],
@@ -147,7 +149,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatDisplayRow(String statName, int statValue) {
+  Widget _buildStatDisplayRow(String statName, int statValue, bool isShadowMonarch) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -156,11 +158,7 @@ class HomeScreen extends StatelessWidget {
           Text(statName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
           Text(
             statValue.toString(),
-            style: const TextStyle(
-              fontSize: 18, 
-              fontWeight: FontWeight.bold,
-              color: Colors.deepPurpleAccent,
-            ),
+            style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -171,16 +169,20 @@ class HomeScreen extends StatelessWidget {
     BuildContext context, 
     Quest quest, 
     PlayerProgressAndStatsController controller,
+    bool isShadowMonarch,
   ) {
     final isDone = quest.isCompleted;
-    final cardColor = isDone ? Colors.green.withValues(alpha: 0.2) : Colors.grey[850];
     final isCalories = quest.id == 'sys_calories';
     final isSteps = quest.id == 'sys_steps';
 
-    return Card(
-      color: cardColor,
+    return Container(
+      decoration: isDone 
+          ? AppTheme.systemCardDecoration(isShadowMonarch).copyWith(
+              color: Colors.green.withValues(alpha: 0.15),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.5)),
+            )
+          : AppTheme.systemCardDecoration(isShadowMonarch),
       margin: const EdgeInsets.only(bottom: 16.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -192,22 +194,17 @@ class HomeScreen extends StatelessWidget {
                 Expanded(
                   child: Text(
                     quest.title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 18, fontWeight: FontWeight.bold).copyWith(
                       decoration: isDone ? TextDecoration.lineThrough : null,
                     ),
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.deepPurpleAccent.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  decoration: AppTheme.badgeDecoration(isShadowMonarch),
                   child: Text(
                     'Rank ${quest.difficulty.name}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.getPrimaryColor(isShadowMonarch)),
                   ),
                 ),
               ],
@@ -220,7 +217,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             if (quest.subQuests.isNotEmpty)
-              _buildSubQuestsList(context, quest, controller)
+              _buildSubQuestsList(context, quest, controller, isShadowMonarch)
             else if (quest.isProgressBased)
               Builder(builder: (context) {
                 final isLimitQuest = quest.isEndOfDayEvaluation;
@@ -306,10 +303,10 @@ class HomeScreen extends StatelessWidget {
                       : () {
                           controller.completeSpecificQuestAndRewardPlayer(quest);
                         },
-                  icon: Icon(isDone ? Icons.check : Icons.play_arrow),
-                  label: Text(isDone ? 'Completed' : 'Complete Quest'),
+                  icon: Icon(isDone ? Icons.check : Icons.play_arrow, color: Colors.white),
+                  label: const Text('Complete Quest', style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDone ? Colors.green : Colors.deepPurpleAccent,
+                    backgroundColor: isDone ? Colors.green : AppTheme.getPrimaryColor(isShadowMonarch),
                   ),
                 ),
               ),
@@ -319,7 +316,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSubQuestsList(BuildContext context, Quest quest, PlayerProgressAndStatsController controller) {
+  Widget _buildSubQuestsList(BuildContext context, Quest quest, PlayerProgressAndStatsController controller, bool isShadowMonarch) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -358,9 +355,9 @@ class HomeScreen extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                       minimumSize: const Size(0, 32),
-                      backgroundColor: Colors.deepPurpleAccent,
+                      backgroundColor: AppTheme.getPrimaryColor(isShadowMonarch),
                     ),
-                    child: const Text('Do'),
+                    child: const Text('Do', style: TextStyle(color: Colors.white)),
                   )
                 else
                   Text(
