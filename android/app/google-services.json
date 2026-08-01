@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "313526013474",
+    "project_id": "level-up-cb693",
+    "storage_bucket": "level-up-cb693.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:313526013474:android:bc99ea72062c291eb4c47b",
+        "android_client_info": {
+          "package_name": "com.teknogenetik.levelup.level_up"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "313526013474-55cdheifq8b4imai398lc4j0k73pqt16.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.teknogenetik.levelup.level_up",
+            "certificate_hash": "44cb0af29b232f9529e57c380f74f698d5579286"
+          }
+        },
+        {
+          "client_id": "313526013474-t3hllcl42h8e8um5ah3d1ei1hvq122k7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9sq32j2MjtXmf1HtRv53EOm_v5ybK7hM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "313526013474-t3hllcl42h8e8um5ah3d1ei1hvq122k7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "313526013474-0vjeb4lsb3k0tlf3joi607osej4ij1t3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.teknogenetik.levelup.levelUp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

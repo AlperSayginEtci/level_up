@@ -8,6 +8,8 @@ import '../models/quest.dart';
 import '../models/achievement.dart';
 import '../services/database_service.dart';
 import '../services/sync_service.dart';
+import '../services/cloud_sync_service.dart';
+import '../services/auth_service.dart';
 
 class PlayerProgressAndStatsController extends ChangeNotifier {
   PlayerStats _currentPlayerStats;
@@ -58,6 +60,22 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     // Controller oluşturulduğunda kayıtlı verileri yüklemeye başla
     _loadStatsFromStorage();
   }
+  
+  Future<void> reloadFromStorage() async {
+    await _loadStatsFromStorage();
+  }
+
+  Future<void> syncWithCloudOnLogin() async {
+    if (AuthService.currentUser == null) return;
+    try {
+      await CloudSyncService.restoreDataFromCloud();
+      await reloadFromStorage(); 
+    } catch (e) {
+      // Bulutta veri yoksa veya hata olursa mevcut lokal verileri buluta yükle
+      await CloudSyncService.backupDataToCloud();
+    }
+  }
+
 
   // Exposing the state through getters to prevent external mutation
   PlayerStats get currentPlayerStats => _currentPlayerStats;
@@ -142,6 +160,11 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     
     // Adım sayar dinlemesini başlat
     _initPedometer();
+
+    // Uygulama her açıldığında offline kalmış verileri buluta eşitlemeyi dene
+    if (AuthService.currentUser != null) {
+      CloudSyncService.backupDataToCloud().catchError((e) => null);
+    }
   }
 
   Future<void> _initPedometer() async {
@@ -313,6 +336,13 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     await prefs.setInt('stat_int', _currentPlayerStats.intelligence);
     await prefs.setInt('stat_sen', _currentPlayerStats.sense);
     await prefs.setInt('stat_vit', _currentPlayerStats.vitality);
+
+    // Otomatik Bulut Senkronizasyonu (Arka planda çalışır)
+    if (AuthService.currentUser != null) {
+      CloudSyncService.backupDataToCloud().catchError((e) {
+        debugPrint("Auto-sync error: $e");
+      });
+    }
   }
 
   void _checkRankAchievements({bool notify = true}) {

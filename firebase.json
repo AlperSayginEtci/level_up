@@ -1,0 +1,25 @@
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "level-up-cb693",
+                    "appId": "1:313526013474:android:bc99ea72062c291eb4c47b",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "level-up-cb693",
+                    "configurations": {
+                        "android": "1:313526013474:android:bc99ea72062c291eb4c47b",
+                        "ios": "1:313526013474:ios:fabe439d94d17bb2b4c47b",
+                        "macos": "1:313526013474:ios:fabe439d94d17bb2b4c47b",
+                        "web": "1:313526013474:web:1f72e303dc478905b4c47b",
+                        "windows": "1:313526013474:web:c72a123fd3b3fb7fb4c47b"
+                    }
+                }
+            }
+        }
+    }
+}

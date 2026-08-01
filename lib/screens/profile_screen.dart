@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:level_up/services/auth_service.dart';
 import '../providers/player_state_manager.dart';
 import '../theme/app_theme.dart';
+import '../services/cloud_sync_service.dart';
 import 'quest_history_screen.dart';
 import 'achievements_screen.dart';
 
@@ -72,7 +74,7 @@ class ProfileScreen extends StatelessWidget {
               // Achievements / Ranks Section
               Container(
                 decoration: AppTheme.systemCardDecoration(isShadowMonarch),
-                margin: const EdgeInsets.only(bottom: 32),
+                margin: const EdgeInsets.only(bottom: 24),
                 child: ListTile(
                   leading: Icon(Icons.stars, color: Colors.yellowAccent.withValues(alpha: 0.8), size: 32),
                   title: Text(
@@ -90,6 +92,58 @@ class ProfileScreen extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => const AchievementsScreen()),
                     );
                   },
+                ),
+              ),
+
+              // --- CLOUD SYNC SECTION ---
+              Container(
+                decoration: AppTheme.systemCardDecoration(isShadowMonarch),
+                margin: const EdgeInsets.only(bottom: 32),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.cloud_sync, color: AppTheme.getPrimaryColor(isShadowMonarch), size: 28),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Data Center',
+                            style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'All your progress is automatically synced with the System Cloud in real-time. Log in on any device to continue your journey.',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                      ),
+                      const SizedBox(height: 16),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            try {
+                              await AuthService.signOut();
+                              // main.dart'taki StreamBuilder otomatik olarak yönlendirecek
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Logout failed: $e'), backgroundColor: Colors.red));
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.logout, color: Colors.redAccent),
+                          label: const Text('SYSTEM LOGOUT', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.redAccent),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

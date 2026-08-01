@@ -10,6 +10,8 @@ import '../widgets/level_up_dialog.dart';
 import 'wear_os/wear_home_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/system_background.dart';
+import '../services/update_service.dart';
+import '../widgets/system_update_dialog.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -20,6 +22,26 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSystemUpdate();
+  }
+
+  Future<void> _checkSystemUpdate() async {
+    // Biraz bekle ki ana ekran tam yüklensin
+    await Future.delayed(const Duration(seconds: 2));
+    final updateInfo = await UpdateService.checkForUpdates();
+    if (updateInfo != null && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => SystemUpdateDialog(updateInfo: updateInfo),
+      );
+    }
+  }
+
 
   final List<Widget> _pages = [
     const HomeScreen(),

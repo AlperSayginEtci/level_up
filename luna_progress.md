@@ -40,8 +40,7 @@
 - [x] Created `OnboardingScreen` (Local System Awakening) to allow the player to register their Hunter Name.
 - [x] Enhanced `ProfileScreen` into an account page that displays the avatar, completed quests, and allows Hunter Name editing.
 - [x] Cleaned up the Radar Chart (`stat_radar_chart.dart`) by removing numeric values and shrinking its layout in `HomeScreen`.
-- [ ] **Future Plan:** Implement Cloud Sync (e.g. Firebase) for cross-device saves (postponed from this session).
-- [ ] **Bug/Todo:** Fix the Radar Chart scaling logic. Currently, if a stat is low (e.g., 2), it might fill the whole radar because the dynamic maximum is calculated incorrectly or too low. We need a more balanced, logical scaling method.
+- [x] Cleaned up the Radar Chart (`stat_radar_chart.dart`) by removing numeric values and shrinking its layout in `HomeScreen`.
 
 ## Session: July 31, 2026
 
@@ -49,8 +48,25 @@
 - [x] Refactored `AppTheme` to create a robust, global design system.
 - [x] Implemented a **Hidden Easter Egg** in the Profile Screen: tapping the highest rank unlocks the "Shadow Monarch" (Mor/Purple) system theme. The user can toggle this theme seamlessly across the entire app.
 - [x] Fixed all active IDE warnings, deprecations, and compiler errors across the codebase to ensure optimal stability.
-- [ ] **Future Plan:** Implement Cloud Sync (e.g., Firebase) for cross-device saves (carried over as a primary goal).
-- [ ] **Future Plan:** Tweak the `SystemBackground`. Specifically:
-  - Reduce the intensity/brightness of the central glowing light.
-  - Reorganize the chaotic circuit lines into a more structured, geometric, or fractal-like layout (e.g., squares/rectangles that form a frame around the screen).
-  - **Optimization Check:** Ensure that calculating the dynamic circuit lines frame-by-frame doesn't drop performance/FPS. Consider caching paths or optimizing the `CustomPainter` logic.
+- [x] Fixed all active IDE warnings, deprecations, and compiler errors across the codebase to ensure optimal stability.
+
+## Session: August 1, 2026
+
+- [x] Configured Firebase CLI and FlutterFire to connect the app to Firebase.
+- [x] Implemented `CloudSyncService` leveraging Firestore for free and seamless data backup/restore.
+- [x] Created `UpdateService` to fetch OTA (Over-The-Air) update metadata (`version.json`) from a remote source.
+- [x] Built a Solo Leveling themed `SystemUpdateDialog` that downloads and installs APK updates natively without Google Play (using `dio` and `open_file`).
+- [x] Intercepted `MainLayout` initialization to automatically check for System Upgrades.
+- [x] Created `AuthService` using Firebase Auth and Google Sign-In for a complete account system.
+- [x] Designed `LoginScreen` with E-mail/Password and Google Sign-In options matching the neon aesthetic.
+- [x] Refactored `CloudSyncService` to automate Cloud Synchronization in the background upon data changes and login.
+- [x] Fixed `google_sign_in` Web compatibility issues by overriding web auth with `FirebaseAuth.signInWithPopup`.
+- [x] Removed manual backup buttons to deliver a seamless real-time syncing experience.
+
+## Remaining System Quests (Goals)
+
+- [ ] **Future Plan:** Tweak the `SystemBackground` (Reduce brightness of central light, reorganize chaotic circuit lines into a geometric frame, and optimize `CustomPainter` performance).
+- [ ] **Bug/Todo:** Fix the Radar Chart scaling logic so that very low stats don't erroneously fill the radar due to incorrect dynamic maximum calculations.
+- [ ] **Bug/Todo:** Resolve any lingering UI glitches in the Wear OS interface.
+- [ ] **Future Plan:** Implement a Friend/Guild system to compare Combat Power and complete team quests.
+- [ ] **Future Plan:** Introduce Daily/Weekly dynamic challenges scaled to the player's current stats.
