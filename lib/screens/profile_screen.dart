@@ -180,26 +180,64 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            try {
-                              await AuthService.signOut();
-                              // main.dart'taki StreamBuilder otomatik olarak yönlendirecek
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Logout failed: $e'), backgroundColor: Colors.red));
+                      Column(
+                        children: [
+                          _buildSettingTile(
+                            icon: Icons.cloud_upload,
+                            title: 'Cloud Sync: Backup (Device -> Cloud)',
+                            color: AppTheme.getPrimaryColor(isShadowMonarch),
+                            onTap: () async {
+                              try {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Uploading to cloud...')),
+                                );
+                                await CloudSyncService.backupDataToCloud();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Backup successful!'), backgroundColor: Colors.green),
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Backup failed: \$e'), backgroundColor: Colors.red),
+                                );
                               }
-                            }
-                          },
-                          icon: const Icon(Icons.logout, color: Colors.redAccent),
-                          label: const Text('SYSTEM LOGOUT', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 2)),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.redAccent),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            },
                           ),
-                        ),
+                          _buildSettingTile(
+                            icon: Icons.cloud_download,
+                            title: 'Cloud Sync: Restore (Cloud -> Device)',
+                            color: AppTheme.getPrimaryColor(isShadowMonarch),
+                            onTap: () async {
+                              try {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Downloading from cloud...')),
+                                );
+                                await CloudSyncService.restoreDataFromCloud();
+                                await context.read<PlayerProgressAndStatsController>().reloadFromStorage();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Restore successful!'), backgroundColor: Colors.green),
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Restore failed: \$e'), backgroundColor: Colors.red),
+                                );
+                              }
+                            },
+                          ),
+                          _buildSettingTile(
+                            icon: Icons.logout,
+                            title: 'SYSTEM LOGOUT',
+                            color: Colors.redAccent,
+                            onTap: () async {
+                              try {
+                                await AuthService.signOut();
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Logout failed: \$e'), backgroundColor: Colors.red));
+                                }
+                              }
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -209,6 +247,14 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSettingTile({required IconData icon, required String title, required Color color, required VoidCallback onTap}) {
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+      onTap: onTap,
     );
   }
 
