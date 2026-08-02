@@ -29,10 +29,44 @@ class SyncService {
   static void _handleIncomingMessage(WearOSMessage message) {
     debugPrint("Received message from WearOS: \${message.path}");
     
-    // Saat üzerinden bir görev tamamlandığında:
     if (message.path == "/quest_completed") {
       final String questId = utf8.decode(message.data);
       _completeQuestLocally(questId);
+    } 
+    else if (message.path == "/sync_quests") {
+      // Saat, telefondan gelen görev listesini alıyor
+      final String jsonStr = utf8.decode(message.data);
+      _updateLocalQuestsFromSync(jsonStr);
+    }
+  }
+
+  static Future<void> _updateLocalQuestsFromSync(String jsonStr) async {
+    try {
+      final List<dynamic> data = jsonDecode(jsonStr);
+      final localQuests = DatabaseService.getAllQuests();
+      bool changed = false;
+
+      for (var item in data) {
+        final qIndex = localQuests.indexWhere((q) => q.id == item['id']);
+        if (qIndex != -1) {
+          final localQ = localQuests[qIndex];
+          if (localQ.isCompleted != item['isCompleted']) {
+            if (item['isCompleted'] == true) {
+               localQ.forceComplete();
+            } else {
+               localQ.resetDaily();
+            }
+            await DatabaseService.saveQuest(localQ);
+            changed = true;
+          }
+        }
+      }
+      
+      // Not: Ekrana yansıması için state manager'ın reload yapması gerek.
+      // Basitçe reload tetiklemek için bir EventBus veya callback eklenebilir,
+      // veya Provider yapısı gereği UI her saniye güncelleniyorsa yeterli olabilir.
+    } catch (e) {
+      debugPrint("Error syncing quests to watch: \$e");
     }
   }
 

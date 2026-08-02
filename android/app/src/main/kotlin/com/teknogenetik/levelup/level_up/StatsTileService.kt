@@ -6,6 +6,7 @@ import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders.argb
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
 import androidx.wear.protolayout.DimensionBuilders.dp
+import androidx.wear.protolayout.DimensionBuilders.sp
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.Column
 import androidx.wear.protolayout.LayoutElementBuilders.Layout
@@ -80,7 +81,7 @@ class StatsTileService : TileService() {
                     .setText("LVL $level")
                     .setFontStyle(LayoutElementBuilders.FontStyle.Builder()
                         .setColor(argb(0xFFFFFFFF.toInt()))
-                        .setSize(dp(24f))
+                        .setSize(sp(24f))
                         .setWeight(LayoutElementBuilders.FONT_WEIGHT_BOLD)
                         .build())
                     .build()
@@ -90,7 +91,7 @@ class StatsTileService : TileService() {
                     .setText(rank)
                     .setFontStyle(LayoutElementBuilders.FontStyle.Builder()
                         .setColor(argb(0xFF448AFF.toInt())) // BlueAccent
-                        .setSize(dp(14f))
+                        .setSize(sp(14f))
                         .build())
                     .build()
             )
@@ -114,7 +115,7 @@ class StatsTileService : TileService() {
                     .setText(label)
                     .setFontStyle(LayoutElementBuilders.FontStyle.Builder()
                         .setColor(argb(0xFF9E9E9E.toInt()))
-                        .setSize(dp(12f))
+                        .setSize(sp(12f))
                         .build())
                     .build()
             )
@@ -123,7 +124,7 @@ class StatsTileService : TileService() {
                     .setText(value.toString())
                     .setFontStyle(LayoutElementBuilders.FontStyle.Builder()
                         .setColor(argb(0xFFFFFFFF.toInt()))
-                        .setSize(dp(18f))
+                        .setSize(sp(18f))
                         .setWeight(LayoutElementBuilders.FONT_WEIGHT_BOLD)
                         .build())
                     .build()

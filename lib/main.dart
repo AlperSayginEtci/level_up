@@ -5,6 +5,7 @@ import 'firebase_options.dart';
 import 'screens/main_layout.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/wear_sync_screen.dart';
 import 'services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'providers/player_state_manager.dart';
@@ -49,14 +50,29 @@ class LevelUpApp extends StatelessWidget {
         builder: (context, snapshot) {
           // If the user is not logged in, show LoginScreen
           if (!snapshot.hasData) {
-            return const LoginScreen();
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 300) {
+                  // Wear OS device: show sync screen instead of login
+                  return const WearSyncScreen();
+                }
+                return const LoginScreen();
+              },
+            );
           }
           
           // User is logged in, check if they are a new player (needs onboarding)
           return Consumer<PlayerProgressAndStatsController>(
             builder: (context, controller, child) {
               if (controller.isNewPlayer) {
-                return const OnboardingScreen();
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth < 300) {
+                      return const WearSyncScreen();
+                    }
+                    return const OnboardingScreen();
+                  },
+                );
               }
               return const MainLayout();
             },

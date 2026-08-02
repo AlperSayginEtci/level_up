@@ -73,6 +73,10 @@
 - [x] Remodeled the `sys_calories` quest into `sys_nutrition` with dynamic sub-quests (Protein, Carbs, Fat) calculated automatically from the user's Age, Weight, and Height.
 - [x] Expanded the `ProfileScreen` to allow users to input Physical Metrics and their personal Gemini API Key.
 - [x] Updated `CloudSyncService` to back up all User Profile settings (including the API Key and Metrics) to Firebase to ensure true cross-device syncing.
+- [x] Fixed `minSdkVersion` and namespace issues for Wear OS Connectivity plugin in Gradle.
+- [x] Created `WearSyncScreen` for Watch OS to bypass Firebase Auth and wait for Phone synchronization.
+- [x] Updated `SyncService` to handle `/sync_quests` logic on Wear OS, allowing local Hive updates.
+- [x] Configured Google Sign-In with updated SHA-1 hashes inside `google-services.json`.
 
 ## Remaining System Quests (Goals)
 
