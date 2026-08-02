@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/player_stats.dart';
+import '../theme/app_theme.dart';
 
 class StatRadarChart extends StatelessWidget {
   final PlayerStats stats;
+  final bool isShadowMonarch;
 
-  const StatRadarChart({super.key, required this.stats});
+  const StatRadarChart({super.key, required this.stats, this.isShadowMonarch = false});
 
   @override
   Widget build(BuildContext context) {
@@ -21,19 +23,21 @@ class StatRadarChart extends StatelessWidget {
     
     // Her zaman 20'nin katları şeklinde bir üst limit belirliyoruz.
     double maxY = ((maxStat ~/ 20) + 1) * 20.0;
+    
+    final primaryColor = AppTheme.getPrimaryColor(isShadowMonarch);
 
     return AspectRatio(
       aspectRatio: 1.2,
       child: RadarChart(
         RadarChartData(
           radarTouchData: RadarTouchData(enabled: false),
-          dataSets: showingDataSets(maxY),
+          dataSets: showingDataSets(maxY, primaryColor),
           radarBackgroundColor: Colors.transparent,
           borderData: FlBorderData(show: false),
           radarBorderData: const BorderSide(color: Colors.white24, width: 1.5),
           titlePositionPercentageOffset: 0.1,
-          titleTextStyle: const TextStyle(
-            color: Colors.blueAccent, // Neon mavi teması
+          titleTextStyle: TextStyle(
+            color: primaryColor, // Temaya göre dinamik renk
             fontSize: 9, // Küçültüldü
             fontWeight: FontWeight.bold,
             letterSpacing: 1.0,
@@ -65,7 +69,7 @@ class StatRadarChart extends StatelessWidget {
     );
   }
 
-  List<RadarDataSet> showingDataSets(double maxY) {
+  List<RadarDataSet> showingDataSets(double maxY, Color primaryColor) {
     return [
       // Görünmez maksimum sınır veri seti (Ölçeklendirmeyi sabitlemek için)
       RadarDataSet(
@@ -83,8 +87,8 @@ class StatRadarChart extends StatelessWidget {
       ),
       // Gerçek oyuncu verileri
       RadarDataSet(
-        fillColor: Colors.blueAccent.withValues(alpha: 0.4),
-        borderColor: Colors.blueAccent,
+        fillColor: primaryColor.withValues(alpha: 0.4),
+        borderColor: primaryColor,
         entryRadius: 3,
         dataEntries: [
           RadarEntry(value: stats.strength.toDouble()),

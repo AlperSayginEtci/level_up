@@ -37,6 +37,19 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
   String? _profileImageBase64;
   String? get profileImageBase64 => _profileImageBase64;
 
+  // Body Metrics & API
+  int _playerAge = 25;
+  int get playerAge => _playerAge;
+  
+  double _playerWeight = 70.0;
+  double get playerWeight => _playerWeight;
+  
+  double _playerHeight = 175.0; // cm
+  double get playerHeight => _playerHeight;
+  
+  String? _geminiApiKey;
+  String? get geminiApiKey => _geminiApiKey;
+
   int _totalCompletedQuests = 0;
   int get totalCompletedQuests => _totalCompletedQuests;
 
@@ -103,11 +116,17 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
       _checkRankAchievements(notify: false); // İlk defa açıldığında
     }
     
-    // Load Player Name
+    // Load Player Name & Profile
     _playerName = prefs.getString('player_name') ?? "Player";
     _isNewPlayer = prefs.getBool('is_new_player') ?? true;
     _profileImageBase64 = prefs.getString('profile_image_base64');
     _totalCompletedQuests = prefs.getInt('total_completed_quests') ?? 0;
+
+    // Load Body Metrics & API Key
+    _playerAge = prefs.getInt('player_age') ?? 25;
+    _playerWeight = prefs.getDouble('player_weight') ?? 70.0;
+    _playerHeight = prefs.getDouble('player_height') ?? 175.0;
+    _geminiApiKey = prefs.getString('gemini_api_key');
 
     _isShadowMonarchThemeUnlocked = prefs.getBool('shadow_monarch_unlocked') ?? false;
     _isShadowMonarchThemeActive = prefs.getBool('shadow_monarch_active') ?? false;
@@ -140,6 +159,15 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
             activeDays: wq.activeDays,
             lastCompletedDate: wq.lastCompletedDate,
           );
+        }
+      }
+
+      // Migration for Calories -> Nutrition
+      final calQuestIndex = _availableQuests.indexWhere((q) => q.id == 'sys_calories' || q.id == 'sys_nutrition');
+      if (calQuestIndex != -1) {
+        final cq = _availableQuests[calQuestIndex];
+        if (cq.subQuests.isEmpty) { // It's the old sys_calories
+          _recalculateMacros(initialMigration: true);
         }
       }
     }
@@ -244,9 +272,9 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
         isRecurring: true,
       ),
       Quest(
-        id: 'sys_calories',
-        title: 'Diet Control',
-        description: 'Consume between 2000 and 2300 Calories',
+        id: 'sys_nutrition',
+        title: 'Diet Control (Nutrition)',
+        description: 'Meet your daily macro goals',
         isProgressBased: true,
         targetProgress: 2000,
         isEndOfDayEvaluation: true,
@@ -256,6 +284,11 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
         difficulty: QuestDifficulty.D,
         isSystemQuest: true,
         isRecurring: true,
+        subQuests: [
+          SubQuest(id: 'sq_protein', title: 'Protein (g)', rewardExp: 10, isProgressBased: true, targetProgress: 140),
+          SubQuest(id: 'sq_carbs', title: 'Carbs (g)', rewardExp: 10, isProgressBased: true, targetProgress: 200),
+          SubQuest(id: 'sq_fat', title: 'Fat (g)', rewardExp: 10, isProgressBased: true, targetProgress: 60),
+        ]
       ),
     ]);
     _saveStatsToStorage();
@@ -496,6 +529,115 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
       _isShadowMonarchThemeActive = !_isShadowMonarchThemeActive;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('shadow_monarch_active', _isShadowMonarchThemeActive);
+      notifyListeners();
+    }
+  }
+
+  Future<void> updatePlayerMetrics(int age, double weight, double height) async {
+    _playerAge = age;
+    _playerWeight = weight;
+    _playerHeight = height;
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('player_age', age);
+    await prefs.setDouble('player_weight', weight);
+    await prefs.setDouble('player_height', height);
+    
+    _recalculateMacros();
+    notifyListeners();
+  }
+  
+  Future<void> updateGeminiApiKey(String key) async {
+    _geminiApiKey = key;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('gemini_api_key', key);
+    notifyListeners();
+  }
+
+  void _recalculateMacros({bool initialMigration = false}) {
+    double bmr = (10 * _playerWeight) + (6.25 * _playerHeight) - (5 * _playerAge) + 5;
+    int targetCalories = (bmr * 1.375).round();
+    int targetProtein = (_playerWeight * 2.0).round();
+    int targetFat = (_playerWeight * 0.8).round();
+    int targetCarbs = ((targetCalories - (targetProtein * 4) - (targetFat * 9)) / 4).round();
+    
+    final qIndex = _availableQuests.indexWhere((q) => q.id == 'sys_calories' || q.id == 'sys_nutrition');
+    if (qIndex != -1) {
+      final oldQ = _availableQuests[qIndex];
+      
+      List<SubQuest> updatedSubQuests = [];
+      if (oldQ.subQuests.isEmpty) {
+          updatedSubQuests = [
+            SubQuest(id: 'sq_protein', title: 'Protein (g)', rewardExp: 10, isProgressBased: true, targetProgress: targetProtein),
+            SubQuest(id: 'sq_carbs', title: 'Carbs (g)', rewardExp: 10, isProgressBased: true, targetProgress: targetCarbs),
+            SubQuest(id: 'sq_fat', title: 'Fat (g)', rewardExp: 10, isProgressBased: true, targetProgress: targetFat),
+          ];
+      } else {
+        for (var sq in oldQ.subQuests) {
+          if (sq.id == 'sq_protein') {
+             updatedSubQuests.add(SubQuest(id: sq.id, title: 'Protein (g)', rewardExp: sq.rewardExp, rewardStat: sq.rewardStat, isProgressBased: true, targetProgress: targetProtein, currentProgress: sq.currentProgress, isCompleted: sq.currentProgress >= targetProtein));
+          } else if (sq.id == 'sq_carbs') {
+             updatedSubQuests.add(SubQuest(id: sq.id, title: 'Carbs (g)', rewardExp: sq.rewardExp, rewardStat: sq.rewardStat, isProgressBased: true, targetProgress: targetCarbs, currentProgress: sq.currentProgress, isCompleted: sq.currentProgress >= targetCarbs));
+          } else if (sq.id == 'sq_fat') {
+             updatedSubQuests.add(SubQuest(id: sq.id, title: 'Fat (g)', rewardExp: sq.rewardExp, rewardStat: sq.rewardStat, isProgressBased: true, targetProgress: targetFat, currentProgress: sq.currentProgress, isCompleted: sq.currentProgress >= targetFat));
+          } else {
+             updatedSubQuests.add(sq);
+          }
+        }
+      }
+      
+      _availableQuests[qIndex] = Quest(
+        id: 'sys_nutrition', // Rename to sys_nutrition if it was sys_calories
+        title: 'Diet Control (Nutrition)',
+        description: 'Meet your daily macro goals: $targetCalories kcal',
+        isProgressBased: oldQ.isProgressBased,
+        targetProgress: targetCalories,
+        currentProgress: oldQ.currentProgress,
+        isCompleted: oldQ.isCompleted,
+        subQuests: updatedSubQuests,
+        rewardExp: oldQ.rewardExp,
+        rewardStat: oldQ.rewardStat,
+        difficulty: oldQ.difficulty,
+        isSystemQuest: true,
+        isRecurring: true,
+        activeDays: oldQ.activeDays,
+        isEndOfDayEvaluation: true,
+        maxLimit: targetCalories + 300,
+        lastCompletedDate: oldQ.lastCompletedDate,
+        completedDates: oldQ.completedDates,
+        completionCount: oldQ.completionCount,
+      );
+      
+      if (!initialMigration) {
+        _saveStatsToStorage();
+      }
+    }
+  }
+
+  void addNutritionProgress(int calories, int protein, int carbs, int fat) {
+    final qIndex = _availableQuests.indexWhere((q) => q.id == 'sys_nutrition' || q.id == 'sys_calories');
+    if (qIndex != -1) {
+      final quest = _availableQuests[qIndex];
+      
+      // Update Main Quest (Calories)
+      quest.addProgress(calories, forceMain: true);
+      
+      // Update SubQuests (Macros)
+      for (var sq in quest.subQuests) {
+        bool wasCompleted = sq.isCompleted;
+        if (sq.id == 'sq_protein') sq.addProgress(protein);
+        if (sq.id == 'sq_carbs') sq.addProgress(carbs);
+        if (sq.id == 'sq_fat') sq.addProgress(fat);
+        
+        if (!wasCompleted && sq.isCompleted) {
+           bool leveledUp = _currentPlayerStats.addExp(sq.rewardExp);
+           if (leveledUp) _hasLeveledUp = true;
+           if (sq.rewardStat != StatType.none) _currentPlayerStats.increaseStat(sq.rewardStat.name, 1);
+        }
+      }
+      _checkRankAchievements();
+      
+      _saveStatsToStorage();
       notifyListeners();
     }
   }

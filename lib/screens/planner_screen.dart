@@ -24,32 +24,40 @@ class _PlannerScreenState extends State<PlannerScreen> {
     return months[month - 1];
   }
 
+  List<Quest> _getQuestsForDate(DateTime date, List<Quest> allQuests) {
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final targetDay = DateTime(date.year, date.month, date.day);
+    final isPast = targetDay.isBefore(today);
+
+    return allQuests.where((q) {
+      if (isPast) {
+        // For past days, only show quests that were ACTUALLY completed on that specific day
+        return q.completedDates.any((d) => d.year == targetDay.year && d.month == targetDay.month && d.day == targetDay.day);
+      } else {
+        // For today or future days
+        if (q.isRecurring) {
+          if (q.activeDays.isEmpty || q.activeDays.length == 7) return true; // Daily recurring
+          return q.activeDays.contains(targetDay.weekday); // Specific days
+        }
+        // For one-time quests, show them on TODAY if they are not completed
+        if (targetDay.isAtSameMomentAs(today) && !q.isCompleted) {
+          return true;
+        }
+        return false;
+      }
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final playerController = context.watch<PlayerProgressAndStatsController>();
+    final allQuests = playerController.availableQuests;
+    final quests = _getQuestsForDate(_selectedDate, allQuests);
     
     final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
     final selectedDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
     final isPast = selectedDay.isBefore(today);
-
-    // Sadece Sistem Görevi olmayan ve her gün tekrarlanmayan (Spesifik günleri olan) görevleri filtrele
-    final quests = playerController.availableQuests.where((q) {
-      if (q.isSystemQuest) return false;
-      
-      if (isPast) {
-        // Geçmişteki bir gün için, o gün tamamlanmışsa göster
-        return q.completedDates.any((d) => d.year == selectedDay.year && d.month == selectedDay.month && d.day == selectedDay.day);
-      } else {
-        // Bugün veya gelecek için normal kurallar geçerli
-        if (q.isRecurring && (q.activeDays.isEmpty || q.activeDays.length == 7)) return false;
-        
-        if (q.isRecurring && q.activeDays.isNotEmpty) {
-          return q.activeDays.contains(_selectedDate.weekday);
-        }
-        return false; 
-      }
-    }).toList();
-
+    final isFuture = selectedDay.isAfter(today);
     final isShadowMonarch = playerController.isShadowMonarchThemeActive;
 
     return Scaffold(
@@ -62,7 +70,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
       body: Column(
         children: [
           // Haftalık / İleriye dönük yatay takvim
-          _buildWeeklyCalendar(isShadowMonarch),
+          _buildWeeklyCalendar(isShadowMonarch, allQuests),
           const Divider(),
           
           Expanded(
@@ -79,7 +87,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     itemCount: quests.length,
                     itemBuilder: (context, index) {
                       final quest = quests[index];
-                      return _buildPlannerQuestCard(quest, isPast, isShadowMonarch);
+                      return _buildPlannerQuestCard(quest, isPast, isFuture, isShadowMonarch, playerController);
                     },
                   ),
           ),
@@ -88,18 +96,46 @@ class _PlannerScreenState extends State<PlannerScreen> {
     );
   }
 
-  Widget _buildWeeklyCalendar(bool isShadowMonarch) {
+  Widget _buildWeeklyCalendar(bool isShadowMonarch, List<Quest> allQuests) {
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+
     return SizedBox(
-      height: 90,
+      height: 100, // Slightly increased height for the indicator dot
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        // Geçmişten 3 gün öncesi ile başlayıp ileriye 30 günlük bir planlayıcı şeridi oluştur
         itemCount: 30, 
         itemBuilder: (context, index) {
           final date = DateTime.now().add(Duration(days: index - 3)); 
-          final isSelected = date.day == _selectedDate.day && 
-                             date.month == _selectedDate.month && 
-                             date.year == _selectedDate.year;
+          final targetDay = DateTime(date.year, date.month, date.day);
+          
+          final isSelected = targetDay.isAtSameMomentAs(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day));
+          
+          final dayQuests = _getQuestsForDate(targetDay, allQuests);
+          bool hasQuests = dayQuests.isNotEmpty;
+          bool allCompleted = false;
+          bool someCompleted = false;
+          
+          if (hasQuests) {
+            if (targetDay.isBefore(today)) {
+               allCompleted = true; // Only completed quests are returned for past days
+               someCompleted = true;
+            } else if (targetDay.isAtSameMomentAs(today)) {
+               int completedCount = dayQuests.where((q) => q.isCompleted).length;
+               someCompleted = completedCount > 0;
+               allCompleted = completedCount == dayQuests.length;
+            }
+          }
+
+          Color dotColor = Colors.transparent;
+          if (hasQuests) {
+            if (allCompleted) {
+              dotColor = Colors.greenAccent;
+            } else if (someCompleted) {
+              dotColor = Colors.orangeAccent;
+            } else if (targetDay.isAtSameMomentAs(today) || targetDay.isAfter(today)) {
+              dotColor = Colors.grey;
+            }
+          }
                              
           return GestureDetector(
             onTap: () {
@@ -137,6 +173,16 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  // Progress Indicator Dot
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: dotColor,
+                      shape: BoxShape.circle,
+                    ),
+                  )
                 ],
               ),
             ),
@@ -146,9 +192,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
     );
   }
 
-
-
-  Widget _buildPlannerQuestCard(Quest quest, bool isPast, bool isShadowMonarch) {
+  Widget _buildPlannerQuestCard(Quest quest, bool isPast, bool isFuture, bool isShadowMonarch, PlayerProgressAndStatsController controller) {
     if (quest.subQuests.isNotEmpty) {
       return Container(
         decoration: AppTheme.systemCardDecoration(isShadowMonarch),
@@ -160,10 +204,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
           ),
           subtitle: Text(quest.description, style: TextStyle(color: Colors.grey[400])),
           children: quest.subQuests.map((sq) {
+            bool sqCompleted = isPast ? true : (isFuture ? false : sq.isCompleted);
             return ListTile(
               leading: Icon(
-                sq.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: sq.isCompleted ? Colors.green : Colors.grey,
+                sqCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                color: sqCompleted ? Colors.green : Colors.grey,
               ),
               title: Text(sq.title),
               trailing: Text('+${sq.rewardExp} EXP', style: const TextStyle(color: Colors.green)),
@@ -173,24 +218,48 @@ class _PlannerScreenState extends State<PlannerScreen> {
       );
     }
     
+    // Add completion button for active quests directly in Planner
+    bool isCompleted = isPast ? true : (isFuture ? false : quest.isCompleted);
+    
     return Container(
-      decoration: AppTheme.systemCardDecoration(isShadowMonarch),
+      decoration: isCompleted
+          ? AppTheme.systemCardDecoration(isShadowMonarch).copyWith(
+              color: Colors.green.withValues(alpha: 0.15),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.5)),
+            )
+          : AppTheme.systemCardDecoration(isShadowMonarch),
       margin: const EdgeInsets.only(bottom: 16.0),
       child: ListTile(
         title: Text(
           quest.title,
-          style: AppTheme.systemTextStyle(isShadowMonarch, fontWeight: FontWeight.bold, fontSize: 18),
+          style: AppTheme.systemTextStyle(isShadowMonarch, fontWeight: FontWeight.bold, fontSize: 18).copyWith(
+            decoration: isCompleted ? TextDecoration.lineThrough : null,
+          ),
         ),
         subtitle: Text(quest.description, style: TextStyle(color: Colors.grey[400])),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: isPast || quest.isCompleted
-              ? AppTheme.badgeDecoration(isShadowMonarch).copyWith(color: Colors.green.withValues(alpha: 0.3))
-              : AppTheme.badgeDecoration(isShadowMonarch),
-          child: Text(
-            isPast ? 'Completed' : 'Rank ${quest.difficulty.name}',
-            style: TextStyle(fontWeight: FontWeight.bold, color: isPast || quest.isCompleted ? Colors.green : AppTheme.getPrimaryColor(isShadowMonarch)),
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: isCompleted
+                  ? AppTheme.badgeDecoration(isShadowMonarch).copyWith(color: Colors.green.withValues(alpha: 0.3))
+                  : AppTheme.badgeDecoration(isShadowMonarch),
+              child: Text(
+                isCompleted ? 'Completed' : 'Rank ${quest.difficulty.name}',
+                style: TextStyle(fontWeight: FontWeight.bold, color: isCompleted ? Colors.green : AppTheme.getPrimaryColor(isShadowMonarch)),
+              ),
+            ),
+            if (!isCompleted && !isPast && !isFuture && !quest.isProgressBased) ...[
+              const SizedBox(width: 12),
+              IconButton(
+                onPressed: () {
+                  controller.completeSpecificQuestAndRewardPlayer(quest);
+                },
+                icon: const Icon(Icons.check_circle_outline, color: Colors.greenAccent),
+              ),
+            ]
+          ],
         ),
       ),
     );

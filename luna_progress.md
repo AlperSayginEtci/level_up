@@ -62,6 +62,17 @@
 - [x] Refactored `CloudSyncService` to automate Cloud Synchronization in the background upon data changes and login.
 - [x] Fixed `google_sign_in` Web compatibility issues by overriding web auth with `FirebaseAuth.signInWithPopup`.
 - [x] Removed manual backup buttons to deliver a seamless real-time syncing experience.
+## Session: August 2, 2026
+
+- [x] Redesigned `SystemBackground` to feature a geometric, neon-bordered UI frame with a centralized subtle glow, perfectly mimicking the system window aesthetic.
+- [x] Fixed the bottom overflow issue in the Home Screen by utilizing `SingleChildScrollView`.
+- [x] Updated `PlannerScreen` to filter quests strictly by the selected date, show daily quests, and indicate daily completion status with color-coded dots on the calendar.
+- [x] Fixed a bug where recurring quests appeared as "completed" on future dates.
+- [x] Applied the Shadow Monarch (Purple) theme to the `StatRadarChart` during the Easter Egg mode.
+- [x] Developed an **AI Food Scanner** (`AiNutritionService`) utilizing the Google Gemini API to analyze food images and extract macro/calorie values.
+- [x] Remodeled the `sys_calories` quest into `sys_nutrition` with dynamic sub-quests (Protein, Carbs, Fat) calculated automatically from the user's Age, Weight, and Height.
+- [x] Expanded the `ProfileScreen` to allow users to input Physical Metrics and their personal Gemini API Key.
+- [x] Updated `CloudSyncService` to back up all User Profile settings (including the API Key and Metrics) to Firebase to ensure true cross-device syncing.
 
 ## Remaining System Quests (Goals)
 

@@ -200,8 +200,8 @@ class Quest {
   
   int get currentProgress => _currentProgress;
 
-  bool addProgress(int amount) {
-    if (subQuests.isNotEmpty) {
+  bool addProgress(int amount, {bool forceMain = false}) {
+    if (subQuests.isNotEmpty && !forceMain) {
       // Eğer zincirleme görevse, ilerleme ana görevde değil, alt görevlerde yapılmalıdır.
       return false; 
     }

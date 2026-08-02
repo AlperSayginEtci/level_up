@@ -17,14 +17,48 @@ class SystemBackground extends StatelessWidget {
     return Container(
       color: AppTheme.getDarkColor(isShadowMonarch),
       child: CustomPaint(
-        painter: _TechCircuitPainter(
+        // Draw the frame on top of the child
+        foregroundPainter: _TechCircuitPainter(
           primaryColor: AppTheme.getPrimaryColor(isShadowMonarch),
           isShadowMonarch: isShadowMonarch,
         ),
-        child: child,
+        // Clip the child so it doesn't spill outside the inner octagon
+        child: ClipPath(
+          clipper: _OctagonClipper(),
+          child: child,
+        ),
       ),
     );
   }
+}
+
+class _OctagonClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    double padding = 4.0;
+    double spacing = 3.0;
+    int lineCount = 2;
+    double cut = 24.0;
+
+    double inset = padding + spacing * (lineCount - 1);
+    Rect rect = Rect.fromLTRB(inset, inset, size.width - inset, size.height - inset);
+    double currentCut = cut - inset;
+    if (currentCut < 0) currentCut = 0;
+
+    return Path()
+      ..moveTo(rect.left + currentCut, rect.top)
+      ..lineTo(rect.right - currentCut, rect.top)
+      ..lineTo(rect.right, rect.top + currentCut)
+      ..lineTo(rect.right, rect.bottom - currentCut)
+      ..lineTo(rect.right - currentCut, rect.bottom)
+      ..lineTo(rect.left + currentCut, rect.bottom)
+      ..lineTo(rect.left, rect.bottom - currentCut)
+      ..lineTo(rect.left, rect.top + currentCut)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
 class _TechCircuitPainter extends CustomPainter {
@@ -35,114 +69,77 @@ class _TechCircuitPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. Draw the subtle radial gradient first
+    double padding = 4.0; // Pushed to the edges so it wraps around content
+    double spacing = 3.0; // Tighter spacing
+    int lineCount = 2;    // Reduced from 4 to 2 lines
+    double cut = 24.0;    // Adjusted corner cut to match the new padding
+    
+    Path getOctagonPath(double inset) {
+      Rect rect = Rect.fromLTRB(inset, inset, size.width - inset, size.height - inset);
+      double currentCut = cut - inset;
+      if (currentCut < 0) currentCut = 0;
+      
+      return Path()
+        ..moveTo(rect.left + currentCut, rect.top)
+        ..lineTo(rect.right - currentCut, rect.top)
+        ..lineTo(rect.right, rect.top + currentCut)
+        ..lineTo(rect.right, rect.bottom - currentCut)
+        ..lineTo(rect.right - currentCut, rect.bottom)
+        ..lineTo(rect.left + currentCut, rect.bottom)
+        ..lineTo(rect.left, rect.bottom - currentCut)
+        ..lineTo(rect.left, rect.top + currentCut)
+        ..close();
+    }
+    
+    Path outerPath = getOctagonPath(padding);
+    Path innerPath = getOctagonPath(padding + spacing * (lineCount - 1));
+    
+    // 1. Fill the area between outer and inner paths with transparent neon
+    Path fillPath = Path()
+      ..addPath(outerPath, Offset.zero)
+      ..addPath(innerPath, Offset.zero)
+      ..fillType = PathFillType.evenOdd;
+      
+    Paint fillPaint = Paint()
+      ..color = primaryColor.withValues(alpha: 0.15)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(fillPath, fillPaint);
+    
+    // 2. Inner glow (from innermost line fading towards the center)
+    Paint innerGlowPaint = Paint()
+      ..color = primaryColor.withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 20.0
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20.0);
+    
+    canvas.save();
+    canvas.clipPath(innerPath);
+    canvas.drawPath(innerPath, innerGlowPaint);
+    canvas.restore();
+    
+    // 3. Draw the parallel lines
+    Paint linePaint = Paint()
+      ..color = primaryColor.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+      
+    for (int i = 0; i < lineCount; i++) {
+      canvas.drawPath(getOctagonPath(padding + spacing * i), linePaint);
+    }
+    
+    // 4. Subtle overall background radial gradient for depth (Center Glass Effect)
     final Rect rect = Offset.zero & size;
-    final Paint backgroundPaint = Paint()
+    final Paint centerGlowPaint = Paint()
       ..shader = RadialGradient(
-        center: const Alignment(0.0, -0.2),
-        radius: 1.2,
+        center: Alignment.center,
+        radius: 0.3, // Daha ufak ve merkeze odaklı bir ışıltı
         colors: [
-          primaryColor.withValues(alpha: 0.15),
-          AppTheme.getDarkColor(isShadowMonarch),
-          Colors.black,
+          primaryColor.withValues(alpha: 0.12), // Çok az bir miktar neon
+          Colors.transparent,
         ],
-        stops: const [0.0, 0.7, 1.0],
+        stops: const [0.0, 1.0],
       ).createShader(rect);
-    
-    canvas.drawRect(rect, backgroundPaint);
-
-    // 2. Draw Geometric Futuristic Fractured Lines
-    final random = Random(42);
-
-    void drawFracturedLine(Offset start, double baseAngle, double totalLength, double thickness, double opacity) {
-      final Paint glowPaint = Paint()
-        ..color = primaryColor.withValues(alpha: opacity * 0.6)
-        ..strokeWidth = thickness * 2.5
-        ..style = PaintingStyle.stroke
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
-
-      final Paint corePaint = Paint()
-        ..color = primaryColor.withValues(alpha: opacity)
-        ..strokeWidth = thickness
-        ..style = PaintingStyle.stroke;
-
-      Path path = Path();
-      path.moveTo(start.dx, start.dy);
-      
-      Offset current = start;
-      double currentAngle = baseAngle;
-      double distanceCovered = 0;
-      int maxTurns = random.nextInt(3); // 0, 1, or 2 sharp turns
-      int turns = 0;
-      
-      while (distanceCovered < totalLength) {
-        double segmentLength = totalLength * (0.2 + random.nextDouble() * 0.4); 
-        if (turns >= maxTurns || distanceCovered + segmentLength > totalLength) {
-          segmentLength = totalLength - distanceCovered; // Finish the line
-        }
-        
-        current = Offset(current.dx + cos(currentAngle) * segmentLength, current.dy + sin(currentAngle) * segmentLength);
-        path.lineTo(current.dx, current.dy);
-        
-        distanceCovered += segmentLength;
-        
-        if (turns < maxTurns && distanceCovered < totalLength) {
-           // Turn by 45 or 90 degrees
-           double turn = (random.nextBool() ? pi / 4 : pi / 2) * (random.nextBool() ? 1 : -1);
-           currentAngle += turn;
-           turns++;
-        }
-      }
-      
-      canvas.drawPath(path, glowPaint);
-      canvas.drawPath(path, corePaint);
-    }
-
-    // Draw sets of fractured parallel lines across the screen
-    
-    // Set 1: Angled downwards (-30 deg) base
-    double angle1 = -pi / 6; 
-    for (int i = 0; i < 15; i++) {
-      double startY = size.height * 1.5 * random.nextDouble() - size.height * 0.2;
-      double startX = -100.0;
-      double length = size.width * (1.5 + random.nextDouble());
-      double thickness = random.nextDouble() > 0.85 ? 2.0 : 0.6;
-      double opacity = 0.05 + random.nextDouble() * 0.25; 
-      drawFracturedLine(Offset(startX, startY), angle1, length, thickness, opacity);
-    }
-
-    // Set 2: Angled downwards steeply (-60 deg) base
-    double angle2 = -pi / 3;
-    for (int i = 0; i < 10; i++) {
-      double startY = size.height + 200.0;
-      double startX = size.width * 1.5 * random.nextDouble() - size.width * 0.2;
-      double length = size.height * (1.2 + random.nextDouble());
-      double thickness = random.nextDouble() > 0.8 ? 1.5 : 0.5;
-      double opacity = 0.05 + random.nextDouble() * 0.2;
-      drawFracturedLine(Offset(startX, startY), angle2, length, thickness, opacity);
-    }
-
-    // Set 3: Angled upwards (30 deg) base
-    double angle3 = pi / 6;
-    for (int i = 0; i < 12; i++) {
-      double startY = size.height * 1.5 * random.nextDouble() - size.height * 0.2;
-      double startX = -100.0;
-      double length = size.width * (1.5 + random.nextDouble());
-      double thickness = random.nextDouble() > 0.85 ? 2.0 : 0.6;
-      double opacity = 0.05 + random.nextDouble() * 0.2;
-      drawFracturedLine(Offset(startX, startY), angle3, length, thickness, opacity);
-    }
-    
-    // Set 4: Almost horizontal faint lines
-    double angle4 = 0.05;
-    for (int i = 0; i < 6; i++) {
-      double startY = size.height * random.nextDouble();
-      double startX = -50.0;
-      double length = size.width * 1.2;
-      double thickness = 0.8;
-      double opacity = 0.1;
-      drawFracturedLine(Offset(startX, startY), angle4, length, thickness, opacity);
-    }
+    canvas.drawRect(rect, centerGlowPaint);
   }
 
   @override

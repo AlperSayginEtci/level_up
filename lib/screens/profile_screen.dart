@@ -95,6 +95,65 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
 
+              // Player Metrics Section
+              Container(
+                decoration: AppTheme.systemCardDecoration(isShadowMonarch),
+                margin: const EdgeInsets.only(bottom: 24),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.monitor_weight, color: AppTheme.getPrimaryColor(isShadowMonarch), size: 28),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Physical Metrics',
+                            style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: Icon(Icons.edit, color: AppTheme.getPrimaryColor(isShadowMonarch)),
+                            onPressed: () => _showEditMetricsDialog(context, playerController),
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildMetricItem('Age', '${playerController.playerAge}', isShadowMonarch),
+                          _buildMetricItem('Height', '${playerController.playerHeight} cm', isShadowMonarch),
+                          _buildMetricItem('Weight', '${playerController.playerWeight} kg', isShadowMonarch),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // System Settings Section
+              Container(
+                decoration: AppTheme.systemCardDecoration(isShadowMonarch),
+                margin: const EdgeInsets.only(bottom: 24),
+                child: ListTile(
+                  leading: Icon(Icons.vpn_key, color: AppTheme.getPrimaryColor(isShadowMonarch), size: 32),
+                  title: Text(
+                    'System API Key (Gemini)',
+                    style: AppTheme.systemTextStyle(isShadowMonarch, fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    playerController.geminiApiKey != null && playerController.geminiApiKey!.isNotEmpty 
+                        ? 'Configured' 
+                        : 'Required for AI Food Scanner',
+                    style: TextStyle(color: playerController.geminiApiKey != null && playerController.geminiApiKey!.isNotEmpty ? Colors.green : Colors.redAccent),
+                  ),
+                  trailing: Icon(Icons.arrow_forward_ios, color: AppTheme.getPrimaryColor(isShadowMonarch).withValues(alpha: 0.5), size: 16),
+                  onTap: () => _showEditApiKeyDialog(context, playerController),
+                ),
+              ),
+
               // --- CLOUD SYNC SECTION ---
               Container(
                 decoration: AppTheme.systemCardDecoration(isShadowMonarch),
@@ -202,6 +261,16 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildMetricItem(String label, String value, bool isShadowMonarch) {
+    return Column(
+      children: [
+        Text(value, style: AppTheme.systemTextStyle(isShadowMonarch, fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+      ],
+    );
+  }
+
   void _showEditNameDialog(BuildContext context, PlayerProgressAndStatsController controller) {
     final TextEditingController nameController = TextEditingController(text: controller.playerName);
     showDialog(
@@ -239,6 +308,97 @@ class ProfileScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
               child: const Text('Save', style: TextStyle(color: Colors.white)),
             ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditMetricsDialog(BuildContext context, PlayerProgressAndStatsController controller) {
+    final ageCtrl = TextEditingController(text: controller.playerAge.toString());
+    final heightCtrl = TextEditingController(text: controller.playerHeight.toString());
+    final weightCtrl = TextEditingController(text: controller.playerWeight.toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.deepPurple)),
+          title: const Text('Update Metrics', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: ageCtrl,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Age', labelStyle: TextStyle(color: Colors.grey)),
+              ),
+              TextField(
+                controller: heightCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Height (cm)', labelStyle: TextStyle(color: Colors.grey)),
+              ),
+              TextField(
+                controller: weightCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Weight (kg)', labelStyle: TextStyle(color: Colors.grey)),
+              ),
+              const SizedBox(height: 12),
+              const Text('* This will recalculate your daily macro goals automatically.', style: TextStyle(fontSize: 11, color: Colors.amber)),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () {
+                final age = int.tryParse(ageCtrl.text) ?? controller.playerAge;
+                final height = double.tryParse(heightCtrl.text) ?? controller.playerHeight;
+                final weight = double.tryParse(weightCtrl.text) ?? controller.playerWeight;
+                controller.updatePlayerMetrics(age, weight, height);
+                Navigator.pop(ctx);
+              },
+              child: const Text('Save'),
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditApiKeyDialog(BuildContext context, PlayerProgressAndStatsController controller) {
+    final keyCtrl = TextEditingController(text: controller.geminiApiKey ?? '');
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.deepPurple)),
+          title: const Text('Gemini API Key', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: keyCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(hintText: 'Enter your API Key here', hintStyle: TextStyle(color: Colors.grey)),
+              ),
+              const SizedBox(height: 12),
+              const Text('Get yours at: https://aistudio.google.com/app/apikey', style: TextStyle(fontSize: 11, color: Colors.blueAccent)),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () {
+                controller.updateGeminiApiKey(keyCtrl.text.trim());
+                Navigator.pop(ctx);
+              },
+              child: const Text('Save'),
+            )
           ],
         );
       },

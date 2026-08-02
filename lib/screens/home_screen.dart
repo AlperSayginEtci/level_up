@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../providers/player_state_manager.dart';
 import '../models/quest.dart';
 import '../widgets/stat_radar_chart.dart';
 import '../theme/app_theme.dart';
+import '../services/ai_nutrition_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -108,7 +111,7 @@ class HomeScreen extends StatelessWidget {
                     flex: 1,
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxHeight: 240),
-                      child: StatRadarChart(stats: stats),
+                      child: StatRadarChart(stats: stats, isShadowMonarch: isShadowMonarch),
                     ),
                   ),
                 ],
@@ -172,7 +175,7 @@ class HomeScreen extends StatelessWidget {
     bool isShadowMonarch,
   ) {
     final isDone = quest.isCompleted;
-    final isCalories = quest.id == 'sys_calories';
+    final isNutrition = quest.id == 'sys_nutrition' || quest.id == 'sys_calories';
     final isSteps = quest.id == 'sys_steps';
 
     return Container(
@@ -256,7 +259,7 @@ class HomeScreen extends StatelessWidget {
                         if (!isSteps) // Hide manual add button for steps
                           IconButton(
                             onPressed: () {
-                              if (isCalories) {
+                              if (isNutrition) {
                                 _showCalorieInputDialog(context, quest, controller);
                               } else {
                                 // Default manual increment (e.g., Water glasses)
@@ -317,18 +320,78 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildSubQuestsList(BuildContext context, Quest quest, PlayerProgressAndStatsController controller, bool isShadowMonarch) {
+    bool isNutrition = quest.id == 'sys_nutrition' || quest.id == 'sys_calories';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Divider(color: Colors.grey),
         const SizedBox(height: 8),
-        Text(
-          'Sub-Quests (Chain)',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              isNutrition ? 'Macros & Calories' : 'Sub-Quests (Chain)',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            if (isNutrition && !quest.isCompleted)
+              ElevatedButton.icon(
+                onPressed: () => _handleAiFoodScan(context, controller, quest),
+                icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                label: const Text('Scan Food', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.getPrimaryColor(isShadowMonarch),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                  minimumSize: const Size(0, 36),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
+        
+        if (isNutrition) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Calories', style: TextStyle(color: Colors.white)),
+              Text('${quest.currentProgress} / ${quest.targetProgress}', style: TextStyle(color: quest.isCompleted ? Colors.green : Colors.grey[400])),
+            ],
+          ),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: (quest.currentProgress / quest.targetProgress).clamp(0.0, 1.0),
+            backgroundColor: Colors.grey[700],
+            valueColor: AlwaysStoppedAnimation<Color>(quest.currentProgress > (quest.maxLimit ?? quest.targetProgress) ? Colors.redAccent : Colors.deepPurpleAccent),
+          ),
+          const SizedBox(height: 12),
+        ],
+
         ...quest.subQuests.map((subQuest) {
           final isSubDone = subQuest.isCompleted;
+          
+          if (isNutrition) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                       children: [
+                         Text(subQuest.title, style: TextStyle(color: isSubDone ? Colors.green : Colors.white)),
+                         Text('${subQuest.currentProgress} / ${subQuest.targetProgress}', style: TextStyle(color: isSubDone ? Colors.green : Colors.grey[400])),
+                       ]
+                    ),
+                    const SizedBox(height: 4),
+                    LinearProgressIndicator(
+                      value: (subQuest.currentProgress / subQuest.targetProgress).clamp(0.0, 1.0),
+                      backgroundColor: Colors.grey[700],
+                      valueColor: AlwaysStoppedAnimation<Color>(isSubDone ? Colors.green : Colors.amber),
+                    ),
+                  ],
+                ),
+              );
+          }
+          
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4.0),
             child: Row(
@@ -370,6 +433,84 @@ class HomeScreen extends StatelessWidget {
         }),
       ],
     );
+  }
+
+  Future<void> _handleAiFoodScan(BuildContext context, PlayerProgressAndStatsController controller, Quest quest) async {
+    if (controller.geminiApiKey == null || controller.geminiApiKey!.isEmpty) {
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please configure your Gemini API Key in Profile Settings first!'), backgroundColor: Colors.redAccent));
+       return;
+    }
+    
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+    if (pickedFile == null) return;
+    
+    // Show Loading
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.grey[900],
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              const Text('System Scanning...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+              const SizedBox(height: 8),
+              Text('Analyzing nutritional values...', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    final result = await AiNutritionService.analyzeFoodImage(controller.geminiApiKey!, File(pickedFile.path));
+    
+    if (context.mounted) {
+      Navigator.pop(context); // Close loading dialog
+      
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to analyze food. Check your API Key or try again.'), backgroundColor: Colors.redAccent));
+        return;
+      }
+      
+      // Show Result Confirmation
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.grey[900],
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.deepPurpleAccent)),
+          title: Text('Scan Complete: ${result.foodName}', style: const TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Calories: ${result.calories} kcal', style: const TextStyle(color: Colors.amber, fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('Protein: ${result.protein}g', style: const TextStyle(color: Colors.white)),
+              Text('Carbs: ${result.carbs}g', style: const TextStyle(color: Colors.white)),
+              Text('Fat: ${result.fat}g', style: const TextStyle(color: Colors.white)),
+              const SizedBox(height: 16),
+              const Text('Add these values to your daily goals?', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Discard', style: TextStyle(color: Colors.redAccent))),
+            ElevatedButton(
+              onPressed: () {
+                controller.addNutritionProgress(result.calories, result.protein, result.carbs, result.fat);
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nutrition data absorbed!'), backgroundColor: Colors.green));
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurpleAccent),
+              child: const Text('Absorb Stats', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            )
+          ],
+        ),
+      );
+    }
   }
 
   void _showCalorieInputDialog(BuildContext context, Quest quest, PlayerProgressAndStatsController controller) {
