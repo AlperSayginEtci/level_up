@@ -138,6 +138,9 @@ class CloudSyncService {
       if (profile['player_height'] != null) await prefs.setDouble('player_height', (profile['player_height'] as num).toDouble());
       if (profile['gemini_api_key'] != null) await prefs.setString('gemini_api_key', profile['gemini_api_key']);
       if (profile['total_completed_quests'] != null) await prefs.setInt('total_completed_quests', profile['total_completed_quests']);
+      
+      // Bulutta profili olan biri zaten yeni oyuncu olamaz
+      await prefs.setBool('is_new_player', false);
     }
   }
 }
