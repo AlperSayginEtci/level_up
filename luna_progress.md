@@ -80,10 +80,26 @@
 - [x] Generated a new perfectly balanced neon blue 'LEVEL UP' app icon with a thick vertical arrow and integrated it using `flutter_launcher_icons`.
 - [x] Updated application name to "Level Up" across the Android manifest.
 
+## Session: August 2, 2026 (Part 2) — v1.0.5
+
+- [x] **Critical Fix:** Resolved fresh-install account reset bug. `_loadStatsFromStorage()` now calls `CloudSyncService.restoreDataFromCloud()` BEFORE initializing local quests if the local DB is empty and the user is logged in. Previously, the app would create a Level 1 account before Firebase data arrived.
+- [x] **Fix:** Profile updates (API Key, body metrics, name, profile image) now immediately trigger `_saveStatsToStorage()` so all changes are backed up to Firebase in real-time — not just to SharedPreferences.
+- [x] **Fix:** Replaced the `pedometer`-only step tracking with a dual approach: `health` package (v13.3.1) fetches the full day's step count from Android Health Connect on startup, and pedometer tracks live deltas. Samsung Health data is now included.
+- [x] **Fix:** Added `android.permission.health.READ_STEPS` to `AndroidManifest.xml` for Health Connect access.
+- [x] **Fix:** Added bidirectional Wear OS ↔ Phone sync for Player Stats. New method `SyncService.sendPlayerStatsToWatch(level, exp)` sends level/EXP to the watch every time data is saved. Watch level now updates in real-time when phone levels up.
+- [x] **Fix:** Added `SyncService.sendProgressToPhone(questId, amount)` so tapping a quest on the watch sends the delta progress back to the phone. Watch quest progress is now reflected on the phone.
+- [x] **Fix:** `sendQuestsToWatch()` now includes `currentProgress` and `targetProgress` fields so the watch can display accurate progress bars.
+- [x] **Fix:** Added `/quest_progress` and `/sync_stats` message path handlers in `SyncService._handleIncomingMessage()`.
+- [x] **Feature:** Added `restoreFromJsonMap()` to `CloudSyncService` and a **"Restore from JSON Backup"** tile in `ProfileScreen` — allows importing a `.json` backup file (e.g., from PC) to restore account data and push it to Firebase.
+- [x] **Fix:** `PlayerStats` model now has a `copyWith()` method (required by the new sync logic in `SyncService`).
+- [x] **Fix:** Bumped version to `1.0.5+5` in `pubspec.yaml` and updated `version.json` download URL to `v1.0.5`.
+- [x] Pushed all changes to GitHub `main` branch. New APK `LevelUp_v1.0.5.apk` built and placed on Desktop.
+
 ## Remaining System Quests (Goals)
 
-- [ ] **Future Plan:** Tweak the `SystemBackground` (Reduce brightness of central light, reorganize chaotic circuit lines into a geometric frame, and optimize `CustomPainter` performance).
+- [ ] **Bug (NEXT SESSION):** AI Food Scanner (Gemini API) is not working. User confirmed API key is set. Need to investigate the Gemini API call flow — check prompt construction, image handling, response parsing, and whether `_geminiApiKey` is correctly read from the provider.
 - [ ] **Bug/Todo:** Fix the Radar Chart scaling logic so that very low stats don't erroneously fill the radar due to incorrect dynamic maximum calculations.
 - [ ] **Bug/Todo:** Resolve any lingering UI glitches in the Wear OS interface.
+- [ ] **Future Plan:** Tweak the `SystemBackground` (Reduce brightness of central light, reorganize chaotic circuit lines into a geometric frame, and optimize `CustomPainter` performance).
 - [ ] **Future Plan:** Implement a Friend/Guild system to compare Combat Power and complete team quests.
 - [ ] **Future Plan:** Introduce Daily/Weekly dynamic challenges scaled to the player's current stats.
