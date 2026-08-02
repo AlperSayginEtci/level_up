@@ -51,6 +51,7 @@ class AuthService {
         final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
         final GoogleSignInAuthentication googleAuth = googleUser.authentication;
         
+        // accessToken null veriyoruz çünkü bu paket versiyonunda idToken yeterli.
         final OAuthCredential credential = GoogleAuthProvider.credential(
           accessToken: null, 
           idToken: googleAuth.idToken,
@@ -60,9 +61,13 @@ class AuthService {
         return result.user;
       }
     } on GoogleSignInException catch (e) {
-      // Ignore user cancellation
-      return null;
+      if (e.code == GoogleSignInExceptionCode.canceled.name || e.code == "canceled") {
+        return null;
+      }
+      debugPrint("Google Sign In Error: \${e.code} - \${e.message}");
+      rethrow;
     } catch (e) {
+      debugPrint("Unknown Auth Error: \$e");
       rethrow;
     }
   }
