@@ -100,7 +100,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
   }
 
   // Veritabanından (Cihaz hafızası) değerleri çeken asenkron metod
-  Future<void> _loadStatsFromStorage() async {
+  Future<void> _loadStatsFromStorage({bool skipSync = false}) async {
     final prefs = await SharedPreferences.getInstance();
     
     // Load Stats
@@ -191,7 +191,12 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
 
     // Uygulama her açıldığında offline kalmış verileri buluta eşitlemeyi dene
     if (AuthService.currentUser != null) {
-      CloudSyncService.backupDataToCloud().catchError((e) => null);
+      CloudSyncService.startRealTimeSync(() {
+        _loadStatsFromStorage(skipSync: true); // Sonsuz döngüyü engellemek için sync atla
+      });
+      if (!skipSync) {
+        CloudSyncService.backupDataToCloud().catchError((e) => null);
+      }
     }
   }
 
