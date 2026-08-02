@@ -1,6 +1,6 @@
 {
-  "version": "1.0.5",
-  "buildNumber": 5,
-  "downloadUrl": "https://github.com/AlperSayginEtci/level_up/releases/download/v1.0.5/app-release.apk",
-  "releaseNotes": "1. Health Connect (Adım) Entegrasyonu eklendi.\n2. Telefon ve Saat arası seviye/görev senkronizasyon hataları giderildi.\n3. PC'deki hesabı kurtarmak için JSON Geri Yükleme eklendi!"
+  "version": "1.0.6",
+  "buildNumber": 6,
+  "downloadUrl": "https://github.com/AlperSayginEtci/level_up/releases/download/v1.0.6/app-release.apk",
+  "releaseNotes": "1. AI Food Scanner için Gemini 2.5 ve 2026 model entegrasyonları yapıldı.\n2. SDK bağımlılığı kaldırılarak raw HTTP altyapısına geçildi."
 }
