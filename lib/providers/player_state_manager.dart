@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pedometer/pedometer.dart';
+import 'package:health/health.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/player_stats.dart';
 import '../models/quest.dart';
@@ -106,6 +107,24 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
   Future<void> _loadStatsFromStorage({bool skipSync = false}) async {
     final prefs = await SharedPreferences.getInstance();
     
+    // --- KRİTİK: Eğer kullanıcı giriş yapmış ve yerel veri BOŞsa (yeni kurulum),
+    //     önce buluttan veriyi çek, sonra devam et. ---
+    if (!skipSync && AuthService.currentUser != null) {
+      final localStats = DatabaseService.getPlayerStats();
+      final localQuests = DatabaseService.getAllQuests();
+      // Eğer yerel hiç görev ve stats level 1 ise, bu yeni kurulum demektir
+      if (localQuests.isEmpty && localStats.level == 1 && localStats.exp == 0) {
+        try {
+          debugPrint("Yeni kurulum tespit edildi, buluttan veri çekiliyor...");
+          await CloudSyncService.restoreDataFromCloud();
+          debugPrint("Buluttan veri çekme başarılı.");
+        } catch (e) {
+          debugPrint("Buluttan veri çekme başarısız (ilk kez kullanıcı olabilir): $e");
+          // Bulutta veri yok = gerçekten yeni kullanıcı, devam et
+        }
+      }
+    }
+    
     // Load Stats
     _currentPlayerStats = DatabaseService.getPlayerStats();
     
@@ -192,7 +211,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     // Adım sayar dinlemesini başlat
     _initPedometer();
 
-    // Uygulama her açıldığında offline kalmış verileri buluta eşitlemeyi dene
+    // Uygulama her açıldığında gerçek zamanlı sync'i başlat (güncelleme gelirse UI'ı yenile)
     if (AuthService.currentUser != null) {
       CloudSyncService.startRealTimeSync(() {
         _loadStatsFromStorage(skipSync: true); // Sonsuz döngüyü engellemek için sync atla
@@ -210,44 +229,75 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
       return;
     }
 
-    // Android/iOS izin isteği
+    // 1. Pedometer ile canlı delta (fark) adımlarını dinle
     if (await Permission.activityRecognition.request().isGranted) {
       _stepCountStream = Pedometer.stepCountStream.listen(
         (StepCount event) {
           _handleStepUpdate(event.steps);
         },
         onError: (error) {
-          debugPrint('Adım sayar hatası: \$error');
+          debugPrint('Adım sayar hatası: $error');
         },
       );
+    }
+
+    // 2. Health paketi ile günün başlangıcından beri atılan tüm adımları çek
+    try {
+      Health health = Health();
+      await health.configure();
+      
+      var types = [HealthDataType.STEPS];
+      bool? hasPermissions = await health.hasPermissions(types);
+      if (hasPermissions != true) {
+        await health.requestAuthorization(types);
+      }
+      
+      final now = DateTime.now();
+      final midnight = DateTime(now.year, now.month, now.day);
+      int? steps = await health.getTotalStepsInInterval(midnight, now);
+      
+      if (steps != null && steps > 0) {
+        final stepQuestIndex = _availableQuests.indexWhere((q) => q.id == 'sys_steps');
+        if (stepQuestIndex != -1) {
+          final stepQuest = _availableQuests[stepQuestIndex];
+          if (!stepQuest.isCompleted) {
+            // Health'ten gelen toplam adım, mevcut ilerlemeden büyükse eşitle
+            int progressToAdd = steps - stepQuest.currentProgress;
+            if (progressToAdd > 0) {
+              updateQuestProgress(stepQuest, progressToAdd);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Health paketi hatası: $e");
     }
   }
 
   void _handleStepUpdate(int totalStepsSinceReboot) {
     if (_dailyBaseSteps == -1) {
-      // Günün ilk verisi, referans olarak kaydet
+      // İlk veri geldiğinde referans olarak kaydet (Delta hesaplamak için)
       _dailyBaseSteps = totalStepsSinceReboot;
-      SharedPreferences.getInstance().then((prefs) {
-        prefs.setInt('daily_base_steps', _dailyBaseSteps);
-      });
+      return;
     }
 
-    int todaySteps = totalStepsSinceReboot - _dailyBaseSteps;
-    if (todaySteps < 0) {
-      // Cihaz yeniden başlatılmış olabilir
+    int delta = totalStepsSinceReboot - _dailyBaseSteps;
+    if (delta < 0) {
+      // Cihaz yeniden başlatılmış
       _dailyBaseSteps = totalStepsSinceReboot;
-      todaySteps = 0;
+      return;
     }
 
-    // Adım görevini bul ve güncelle
-    final stepQuestIndex = _availableQuests.indexWhere((q) => q.id == 'sys_steps');
-    if (stepQuestIndex != -1) {
-      final stepQuest = _availableQuests[stepQuestIndex];
-      if (!stepQuest.isCompleted) {
-        // Hedefi aşmamak için Math.min kullanmıyoruz çünkü addProgress kendi içinde hallediyor
-        int progressToAdd = todaySteps - stepQuest.currentProgress;
-        if (progressToAdd > 0) {
-          updateQuestProgress(stepQuest, progressToAdd);
+    // Referansı güncelle
+    _dailyBaseSteps = totalStepsSinceReboot;
+
+    // Sadece aradaki farkı (delta) göreve ekle
+    if (delta > 0) {
+      final stepQuestIndex = _availableQuests.indexWhere((q) => q.id == 'sys_steps');
+      if (stepQuestIndex != -1) {
+        final stepQuest = _availableQuests[stepQuestIndex];
+        if (!stepQuest.isCompleted) {
+          updateQuestProgress(stepQuest, delta);
         }
       }
     }
@@ -367,6 +417,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     
     // Send updated quests to Wear OS
     await SyncService.sendQuestsToWatch(_availableQuests);
+    await SyncService.sendPlayerStatsToWatch(_currentPlayerStats.level, _currentPlayerStats.exp);
 
     // Save key stats to SharedPreferences so Native Android TileService can read them
     final prefs = await SharedPreferences.getInstance();

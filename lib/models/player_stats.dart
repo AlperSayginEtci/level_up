@@ -80,6 +80,26 @@ class PlayerStats {
     };
   }
 
+  PlayerStats copyWith({
+    int? level,
+    int? exp,
+    int? strength,
+    int? vitality,
+    int? agility,
+    int? intelligence,
+    int? sense,
+  }) {
+    return PlayerStats(
+      level: level ?? this.level,
+      exp: exp ?? this.exp,
+      strength: strength ?? this.strength,
+      vitality: vitality ?? this.vitality,
+      agility: agility ?? this.agility,
+      intelligence: intelligence ?? this.intelligence,
+      sense: sense ?? this.sense,
+    );
+  }
+
   // Create from Map when loading from Local storage
   factory PlayerStats.fromMap(Map<String, dynamic> map) {
     return PlayerStats(

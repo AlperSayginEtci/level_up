@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -216,6 +218,46 @@ class ProfileScreen extends StatelessWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('Restore successful!'), backgroundColor: Colors.green),
                                 );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Restore failed: $e'), backgroundColor: Colors.red),
+                                );
+                              }
+                            },
+                          ),
+                          _buildSettingTile(
+                            icon: Icons.restore_page,
+                            title: 'Restore from JSON Backup',
+                            color: Colors.orangeAccent,
+                            onTap: () async {
+                              try {
+                                FilePickerResult? result = await FilePicker.platform.pickFiles(
+                                  type: FileType.custom,
+                                  allowedExtensions: ['json'],
+                                );
+
+                                if (result != null && result.files.single.path != null) {
+                                  File file = File(result.files.single.path!);
+                                  String jsonString = await file.readAsString();
+                                  Map<String, dynamic> data = jsonDecode(jsonString);
+                                  
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Restoring from JSON...')),
+                                  );
+
+                                  // CloudSyncService'in parse metodunu public yapıp kullanabiliriz 
+                                  // veya CloudSyncService.restoreFromJsonString gibi bir metod yazabiliriz.
+                                  // Şimdilik CloudSyncService'e yeni metod eklemek en temizi.
+                                  await CloudSyncService.restoreFromJsonMap(data);
+                                  await context.read<PlayerProgressAndStatsController>().reloadFromStorage();
+                                  
+                                  // Geri yükleme sonrası buluta da yedekle ki PC'deki 200 lvl buluta çıksın
+                                  await CloudSyncService.backupDataToCloud();
+                                  
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Restore successful! Uploaded to cloud.'), backgroundColor: Colors.green),
+                                  );
+                                }
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Restore failed: $e'), backgroundColor: Colors.red),

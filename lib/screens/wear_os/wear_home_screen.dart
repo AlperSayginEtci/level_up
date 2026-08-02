@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/player_state_manager.dart';
 import '../../models/quest.dart';
+import '../../services/sync_service.dart';
 
 class WearHomeScreen extends StatefulWidget {
   const WearHomeScreen({super.key});
@@ -92,10 +93,9 @@ class _WearHomeScreenState extends State<WearHomeScreen> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: InkWell(
         onTap: () {
-          // Görevi saate tamamla ve telefona bildir
+          // Görevi saate tamamla ve telefona ilerleme bilgisini gönder
           controller.updateQuestProgress(quest, 1);
-          // (Opsiyonel) Özel Wear OS Sync sinyali gönder:
-          // SyncService.sendQuestCompletedToPhone(quest.id);
+          SyncService.sendProgressToPhone(quest.id, 1);
         },
         borderRadius: BorderRadius.circular(16),
         child: Container(

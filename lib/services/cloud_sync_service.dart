@@ -147,4 +147,17 @@ class CloudSyncService {
       await prefs.setBool('is_new_player', false);
     }
   }
+
+  static Future<void> restoreFromJsonMap(Map<String, dynamic> data) async {
+    try {
+      _isSyncing = true;
+      await _parseAndSaveLocalData(data);
+      debugPrint('Veriler başarıyla JSON yedeklemesinden indirildi.');
+    } catch (e) {
+      debugPrint("JSON Geri yükleme hatası: $e");
+      rethrow;
+    } finally {
+      _isSyncing = false;
+    }
+  }
 }

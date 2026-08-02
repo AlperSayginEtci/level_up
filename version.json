@@ -1,6 +1,6 @@
 {
-  "version": "1.0.4",
-  "buildNumber": 4,
-  "downloadUrl": "https://github.com/AlperSayginEtci/level_up/releases/download/v1.0.4/app-release.apk",
-  "releaseNotes": "System Link issue for Wear OS fixed. Watch now properly bypasses auth and syncs data from phone."
+  "version": "1.0.5",
+  "buildNumber": 5,
+  "downloadUrl": "https://github.com/AlperSayginEtci/level_up/releases/download/v1.0.5/app-release.apk",
+  "releaseNotes": "1. Health Connect (Adım) Entegrasyonu eklendi.\n2. Telefon ve Saat arası seviye/görev senkronizasyon hataları giderildi.\n3. PC'deki hesabı kurtarmak için JSON Geri Yükleme eklendi!"
 }
