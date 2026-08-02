@@ -72,6 +72,9 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
         _achievements = defaultAchievements.map((a) => a.copyWith()).toList() {
     // Controller oluşturulduğunda kayıtlı verileri yüklemeye başla
     _loadStatsFromStorage();
+    SyncService.onSyncDataReceived = () {
+      reloadFromStorage();
+    };
   }
   
   Future<void> reloadFromStorage() async {

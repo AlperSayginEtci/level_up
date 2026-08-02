@@ -71,6 +71,8 @@ class CloudSyncService {
         'achievements': achievements,
         'profile': profileData,
         'lastUpdated': FieldValue.serverTimestamp(),
+      }).timeout(const Duration(seconds: 15), onTimeout: () {
+        throw Exception("Buluta bağlanılamadı (Zaman Aşımı). Lütfen internetinizi kontrol edin.");
       });
       debugPrint('Veriler başarıyla buluta yedeklendi.');
     } catch (e) {
@@ -84,7 +86,9 @@ class CloudSyncService {
   static Future<void> restoreDataFromCloud() async {
     try {
       _isSyncing = true;
-      final doc = await _db.collection('users').doc(_userId).get();
+      final doc = await _db.collection('users').doc(_userId).get().timeout(const Duration(seconds: 15), onTimeout: () {
+        throw Exception("Buluta bağlanılamadı (Zaman Aşımı). Lütfen internetinizi kontrol edin.");
+      });
       if (doc.exists && doc.data() != null) {
         await _parseAndSaveLocalData(doc.data()!);
         debugPrint('Veriler başarıyla buluttan indirildi.');

@@ -197,7 +197,7 @@ class ProfileScreen extends StatelessWidget {
                                 );
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Backup failed: \$e'), backgroundColor: Colors.red),
+                                  SnackBar(content: Text('Backup failed: $e'), backgroundColor: Colors.red),
                                 );
                               }
                             },
@@ -218,7 +218,7 @@ class ProfileScreen extends StatelessWidget {
                                 );
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Restore failed: \$e'), backgroundColor: Colors.red),
+                                  SnackBar(content: Text('Restore failed: $e'), backgroundColor: Colors.red),
                                 );
                               }
                             },
@@ -232,7 +232,7 @@ class ProfileScreen extends StatelessWidget {
                                 await AuthService.signOut();
                               } catch (e) {
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Logout failed: \$e'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Logout failed: $e'), backgroundColor: Colors.red));
                                 }
                               }
                             },
@@ -298,9 +298,17 @@ class ProfileScreen extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           'Total Quests Completed: ${controller.totalCompletedQuests}',
-          style: TextStyle(color: AppTheme.getPrimaryColor(isShadowMonarch).withValues(alpha: 0.8)),
+          style: TextStyle(color: Colors.grey[400]),
         ),
-        const SizedBox(height: 32),
+        if (AuthService.currentUser != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'UID: ${AuthService.currentUser!.uid}',
+              style: TextStyle(color: Colors.grey[600], fontSize: 10),
+            ),
+          ),
+        const SizedBox(height: 24),
         Divider(color: AppTheme.getPrimaryColor(isShadowMonarch).withValues(alpha: 0.3)),
         const SizedBox(height: 16),
       ],

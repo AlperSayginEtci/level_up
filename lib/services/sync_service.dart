@@ -7,6 +7,7 @@ import 'package:level_up/services/database_service.dart';
 class SyncService {
   static FlutterWearOsConnectivity? _wearOsConnectivity;
   static bool _isInitialized = false;
+  static VoidCallback? onSyncDataReceived;
 
   static Future<void> init() async {
     if (kIsWeb) return; // Wear OS works only on Android
@@ -60,6 +61,10 @@ class SyncService {
             changed = true;
           }
         }
+      }
+      
+      if (changed && onSyncDataReceived != null) {
+        onSyncDataReceived!();
       }
       
       // Not: Ekrana yansıması için state manager'ın reload yapması gerek.
