@@ -97,9 +97,7 @@
 
 ## Remaining System Quests (Goals)
 
-- [ ] **Bug (NEXT SESSION):** AI Food Scanner (Gemini API) is not working. User confirmed API key is set. Need to investigate the Gemini API call flow — check prompt construction, image handling, response parsing, and whether `_geminiApiKey` is correctly read from the provider.
-- [ ] **Bug/Todo:** Fix the Radar Chart scaling logic so that very low stats don't erroneously fill the radar due to incorrect dynamic maximum calculations.
+- [x] **Bug (Fixed):** AI Food Scanner (Gemini API) is not working. 
+  *Root Cause:* The official `google_generative_ai` SDK was failing with 404 because older `gemini-1.5` models were deprecated and removed from the 2026 API.
+  *Fix:* Completely replaced the official SDK with a raw HTTP REST client using `dio`. Implemented a robust fallback system and updated the endpoints to use the latest `gemini-2.5-flash` and `gemini-flash-latest` models. Added detailed error logging to the UI for future API key debugging.
 - [ ] **Bug/Todo:** Resolve any lingering UI glitches in the Wear OS interface.
-- [ ] **Future Plan:** Tweak the `SystemBackground` (Reduce brightness of central light, reorganize chaotic circuit lines into a geometric frame, and optimize `CustomPainter` performance).
-- [ ] **Future Plan:** Implement a Friend/Guild system to compare Combat Power and complete team quests.
-- [ ] **Future Plan:** Introduce Daily/Weekly dynamic challenges scaled to the player's current stats.

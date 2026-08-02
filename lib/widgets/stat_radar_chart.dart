@@ -22,7 +22,11 @@ class StatRadarChart extends StatelessWidget {
     ].reduce((a, b) => a > b ? a : b).toDouble();
     
     // Her zaman 20'nin katları şeklinde bir üst limit belirliyoruz.
+    // Başlangıç seviyesindeki düşük statların radarı doldurmasını engellemek için minimum 50 yapıyoruz.
     double maxY = ((maxStat ~/ 20) + 1) * 20.0;
+    if (maxY < 50) {
+      maxY = 50.0;
+    }
     
     final primaryColor = AppTheme.getPrimaryColor(isShadowMonarch);
 

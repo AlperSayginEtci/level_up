@@ -466,13 +466,32 @@ class HomeScreen extends StatelessWidget {
       );
     }
     
-    final result = await AiNutritionService.analyzeFoodImage(controller.geminiApiKey!, File(pickedFile.path));
+    NutritionResult? result;
+    try {
+      result = await AiNutritionService.analyzeFoodImage(controller.geminiApiKey!, File(pickedFile.path));
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('API Error', style: TextStyle(color: Colors.redAccent)),
+            content: SingleChildScrollView(child: Text(e.toString(), style: const TextStyle(color: Colors.white))),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))
+            ],
+            backgroundColor: Colors.grey[900],
+          ),
+        );
+      }
+      return;
+    }
     
     if (context.mounted) {
       Navigator.pop(context); // Close loading dialog
       
       if (result == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to analyze food. Check your API Key or try again.'), backgroundColor: Colors.redAccent));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to analyze food. No result returned.'), backgroundColor: Colors.redAccent));
         return;
       }
       
@@ -482,16 +501,16 @@ class HomeScreen extends StatelessWidget {
         builder: (ctx) => AlertDialog(
           backgroundColor: Colors.grey[900],
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.deepPurpleAccent)),
-          title: Text('Scan Complete: ${result.foodName}', style: const TextStyle(color: Colors.white)),
+          title: Text('Scan Complete: ${result!.foodName}', style: const TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Calories: ${result.calories} kcal', style: const TextStyle(color: Colors.amber, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('Calories: ${result!.calories} kcal', style: const TextStyle(color: Colors.amber, fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('Protein: ${result.protein}g', style: const TextStyle(color: Colors.white)),
-              Text('Carbs: ${result.carbs}g', style: const TextStyle(color: Colors.white)),
-              Text('Fat: ${result.fat}g', style: const TextStyle(color: Colors.white)),
+              Text('Protein: ${result!.protein}g', style: const TextStyle(color: Colors.white)),
+              Text('Carbs: ${result!.carbs}g', style: const TextStyle(color: Colors.white)),
+              Text('Fat: ${result!.fat}g', style: const TextStyle(color: Colors.white)),
               const SizedBox(height: 16),
               const Text('Add these values to your daily goals?', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
             ],
@@ -500,7 +519,7 @@ class HomeScreen extends StatelessWidget {
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Discard', style: TextStyle(color: Colors.redAccent))),
             ElevatedButton(
               onPressed: () {
-                controller.addNutritionProgress(result.calories, result.protein, result.carbs, result.fat);
+                controller.addNutritionProgress(result!.calories, result!.protein, result!.carbs, result!.fat);
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nutrition data absorbed!'), backgroundColor: Colors.green));
               },
