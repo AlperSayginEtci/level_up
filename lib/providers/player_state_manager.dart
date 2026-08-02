@@ -562,6 +562,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('player_name', newName);
     await prefs.setBool('is_new_player', false);
+    _saveStatsToStorage(); // Buluta da yedekle
     notifyListeners();
   }
 
@@ -569,6 +570,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     _profileImageBase64 = base64;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('profile_image_base64', base64);
+    _saveStatsToStorage(); // Buluta da yedekle
     notifyListeners();
   }
 
@@ -603,6 +605,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     await prefs.setDouble('player_height', height);
     
     _recalculateMacros();
+    _saveStatsToStorage(); // Buluta da yedekle
     notifyListeners();
   }
   
@@ -610,6 +613,7 @@ class PlayerProgressAndStatsController extends ChangeNotifier {
     _geminiApiKey = key;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('gemini_api_key', key);
+    _saveStatsToStorage(); // Buluta da yedekle
     notifyListeners();
   }
 
