@@ -77,6 +77,8 @@
 - [x] Created `WearSyncScreen` for Watch OS to bypass Firebase Auth and wait for Phone synchronization.
 - [x] Updated `SyncService` to handle `/sync_quests` logic on Wear OS, allowing local Hive updates.
 - [x] Configured Google Sign-In with updated SHA-1 hashes inside `google-services.json`.
+- [x] Generated a new neon green 'LEVEL UP' app icon and integrated it using `flutter_launcher_icons`.
+- [x] Updated application name to "Level Up" across the Android manifest.
 
 ## Remaining System Quests (Goals)
 

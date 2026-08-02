@@ -2,9 +2,9 @@
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-feature android:name="android.hardware.type.watch" android:required="false" />
     <application
-        android:label="level_up"
+        android:label="Level Up"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
         <uses-library android:name="com.google.android.wearable" android:required="false" />
         <activity
             android:name=".MainActivity"
