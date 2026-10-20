@@ -82,8 +82,3 @@ To use the AI food scanner, enter your own [Gemini API key](https://aistudio.goo
 
 ### Download
 Prebuilt APKs are published on the [Releases](https://github.com/AlperSayginEtci/level_up/releases) page.
-
-## Roadmap
-- [ ] Friends and leaderboards
-- [ ] Home screen widget
-- [ ] iOS / watchOS support
